@@ -7,11 +7,9 @@
  * RECOMENDADO: Apague este arquivo após o uso por segurança!
  */
 
-use Illuminate\Support\Facades\Artisan;
-
-// Autoload do Laravel
-require __DIR__.'/vendor/autoload.php';
-$app = require_once __DIR__.'/bootstrap/app.php';
+// Autoload do Laravel (Ajustado para pasta public)
+require __DIR__.'/../vendor/autoload.php';
+$app = require_once __DIR__.'/../bootstrap/app.php';
 $kernel = $app->make(Illuminate\Contracts\Http\Kernel::class);
 $kernel->handle(Illuminate\Http\Request::capture());
 
@@ -53,7 +51,7 @@ try {
         echo "<p style='color:green'>Caches limpos!</p>";
     }
 } catch (\Exception $e) {
-    echo "<p style='color:red'>Erro: " . $e->getMessage() . "</p>";
+    echo "<p style='color:red'>Erro (Verifique se o banco está configurado no .env): " . $e->getMessage() . "</p>";
 }
 
 echo "<br><hr><a href='deploy_helper.php'>Voltar</a>";
