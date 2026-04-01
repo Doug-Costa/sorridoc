@@ -19,6 +19,7 @@ $command = $_GET['cmd'] ?? null;
 
 if (!$command) {
     echo "<ul>";
+    echo "<li><a href='?cmd=key'>Gerar APP_KEY (Obrigatório se der erro 500)</a></li>";
     echo "<li><a href='?cmd=migrate'>Rodar Migrações (Migrate)</a></li>";
     echo "<li><a href='?cmd=storage_link'>Criar Link Simbólico (Storage:link)</a></li>";
     echo "<li><a href='?cmd=optimize'>Otimizar Tudo (Cache, View, Route)</a></li>";
@@ -27,6 +28,12 @@ if (!$command) {
 }
 
 try {
+    if ($command === 'key') {
+        Artisan::call('key:generate', ['--force' => true]);
+        echo "<pre>" . Artisan::output() . "</pre>";
+        echo "<p style='color:green'>Chave de segurança gerada!</p>";
+    }
+
     if ($command === 'migrate') {
         Artisan::call('migrate', ['--force' => true]);
         echo "<pre>" . Artisan::output() . "</pre>";
