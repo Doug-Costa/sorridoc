@@ -58,7 +58,7 @@ try {
                 'name' => 'Super Admin',
                 'password' => \Illuminate\Support\Facades\Hash::make('admin123'),
                 'pin_code' => '1234', // Definindo um PIN padrão inicial
-                'is_super_admin' => true, // Se o seu sistema usa essa flag
+                'role' => 'Super Admin', // O Policy usa este campo
             ]
         );
         echo "<pre>Usuário Criado!</pre>";
