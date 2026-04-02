@@ -43,6 +43,7 @@ if (!$command) {
     echo "<ul>";
     echo "<li><a href='?cmd=key'>Gerar APP_KEY (Obrigatório se der erro 500)</a></li>";
     echo "<li><a href='?cmd=migrate'>Rodar Migrações (Migrate)</a></li>";
+    echo "<li><a href='?cmd=create_admin'>Criar Novo Usuário Admin</a></li>";
     echo "<li><a href='?cmd=storage_link'>Criar Link Simbólico (Storage:link)</a></li>";
     echo "<li><a href='?cmd=optimize'>Otimizar Tudo (Cache, View, Route)</a></li>";
     echo "<li><a href='?cmd=clear'>Limpar Todos os Caches</a></li>";
@@ -50,6 +51,20 @@ if (!$command) {
 }
 
 try {
+    if ($command === 'create_admin') {
+        $user = \App\Models\User::updateOrCreate(
+            ['email' => 'admin@sorridoc.com.br'],
+            [
+                'name' => 'Super Admin',
+                'password' => \Illuminate\Support\Facades\Hash::make('admin123'),
+                'pin_code' => '1234', // Definindo um PIN padrão inicial
+                'is_super_admin' => true, // Se o seu sistema usa essa flag
+            ]
+        );
+        echo "<pre>Usuário Criado!</pre>";
+        echo "<p style='color:green'>Login: <b>admin@sorridoc.com.br</b><br>Senha: <b>admin123</b><br>PIN: <b>1234</b></p>";
+    }
+
     if ($command === 'key') {
         \Illuminate\Support\Facades\Artisan::call('key:generate', ['--force' => true]);
         echo "<pre>" . \Illuminate\Support\Facades\Artisan::output() . "</pre>";
