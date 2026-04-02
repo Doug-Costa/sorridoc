@@ -2,14 +2,36 @@
 
 /**
  * SorriDoc - Auxiliar de Deploy (Hostinger Shared)
- * 
- * Acesse este arquivo via navegador: seu-site.com.br/deploy_helper.php
- * RECOMENDADO: Apague este arquivo após o uso por segurança!
  */
 
-// Autoload do Laravel (Ajustado para pasta public)
-require __DIR__.'/../vendor/autoload.php';
-$app = require_once __DIR__.'/../bootstrap/app.php';
+$rootPath = __DIR__ . '/..';
+$envPath = $rootPath . '/.env';
+$examplePath = $rootPath . '/.env.example';
+
+// Ação manual: Criar .env se não existir
+if (isset($_GET['cmd']) && $_GET['cmd'] === 'create_env') {
+    if (file_exists($examplePath)) {
+        copy($examplePath, $envPath);
+        echo "<p style='color:green'>Arquivo .env criado com sucesso a partir do .env.example!</p>";
+        echo "<a href='deploy_helper.php'>Voltar e Continuar</a>";
+        exit;
+    } else {
+        die("Erro fatal: .env.example não foi encontrado no root.");
+    }
+}
+
+// Verifica se o .env existe antes de carregar o Laravel
+if (!file_exists($envPath)) {
+    echo "<h2>O arquivo .env não foi encontrado na Hostinger!</h2>";
+    echo "<p>Isso acontece porque o Git normalmente ignora esse arquivo por segurança.</p>";
+    echo "<a href='?cmd=create_env' style='padding: 10px 20px; background: #4f46e5; color: white; text-decoration: none; border-radius: 5px;'>Criar .env agora</a>";
+    echo "<br><br><p>Após criar, você precisará editar os dados do banco no Gerenciador de Arquivos da Hostinger.</p>";
+    exit;
+}
+
+// Autoload do Laravel
+require $rootPath . '/vendor/autoload.php';
+$app = require_once $rootPath . '/bootstrap/app.php';
 $kernel = $app->make(Illuminate\Contracts\Http\Kernel::class);
 $kernel->handle(Illuminate\Http\Request::capture());
 
@@ -29,36 +51,24 @@ if (!$command) {
 
 try {
     if ($command === 'key') {
-        Artisan::call('key:generate', ['--force' => true]);
-        echo "<pre>" . Artisan::output() . "</pre>";
+        \Illuminate\Support\Facades\Artisan::call('key:generate', ['--force' => true]);
+        echo "<pre>" . \Illuminate\Support\Facades\Artisan::output() . "</pre>";
         echo "<p style='color:green'>Chave de segurança gerada!</p>";
     }
 
     if ($command === 'migrate') {
-        Artisan::call('migrate', ['--force' => true]);
-        echo "<pre>" . Artisan::output() . "</pre>";
+        \Illuminate\Support\Facades\Artisan::call('migrate', ['--force' => true]);
+        echo "<pre>" . \Illuminate\Support\Facades\Artisan::output() . "</pre>";
         echo "<p style='color:green'>Migrações executadas!</p>";
     }
 
     if ($command === 'storage_link') {
-        Artisan::call('storage:link');
-        echo "<pre>" . Artisan::output() . "</pre>";
+        \Illuminate\Support\Facades\Artisan::call('storage:link');
+        echo "<pre>" . \Illuminate\Support\Facades\Artisan::output() . "</pre>";
         echo "<p style='color:green'>Storage Link criado!</p>";
     }
-
-    if ($command === 'optimize') {
-        Artisan::call('optimize');
-        echo "<pre>" . Artisan::output() . "</pre>";
-        echo "<p style='color:green'>Sistema otimizado!</p>";
-    }
-
-    if ($command === 'clear') {
-        Artisan::call('optimize:clear');
-        echo "<pre>" . Artisan::output() . "</pre>";
-        echo "<p style='color:green'>Caches limpos!</p>";
-    }
 } catch (\Exception $e) {
-    echo "<p style='color:red'>Erro (Verifique se o banco está configurado no .env): " . $e->getMessage() . "</p>";
+    echo "<p style='color:red'>Erro operacional: " . $e->getMessage() . "</p>";
 }
 
 echo "<br><hr><a href='deploy_helper.php'>Voltar</a>";
