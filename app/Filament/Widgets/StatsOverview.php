@@ -19,10 +19,20 @@ class StatsOverview extends BaseStatsOverview
                 ->description('Sob proteção LGPD')
                 ->descriptionIcon('heroicon-m-shield-check')
                 ->color('danger'),
-            Stat::make('Tempo médio aprovação', '1.4h')
+            Stat::make('Tempo médio aprovação', $this->getAverageTime())
                 ->description('Meta: 4h')
                 ->descriptionIcon('heroicon-m-arrow-trending-up')
                 ->color('success'),
         ];
+    }
+
+    protected function getAverageTime(): string
+    {
+        $avgHours = Approval::where('status', 'Aprovado')
+            ->get()
+            ->map(fn ($a) => $a->updated_at->diffInHours($a->created_at))
+            ->average() ?? 0;
+
+        return number_format($avgHours, 1) . 'h';
     }
 }

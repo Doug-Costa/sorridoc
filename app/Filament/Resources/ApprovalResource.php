@@ -38,7 +38,10 @@ class ApprovalResource extends Resource
                     ->schema([
                         Infolists\Components\ViewEntry::make('progress')
                             ->view('filament.components.approval-progress')
-                            ->viewData(['status' => fn (Approval $record) => $record->status])
+                            ->viewData([
+                                'record' => fn (Approval $record) => $record,
+                                'status' => fn (Approval $record) => $record->status,
+                            ])
                             ->columnSpanFull(),
                         
                         Infolists\Components\Grid::make(1)
@@ -176,7 +179,43 @@ class ApprovalResource extends Resource
                             return;
                         }
 
-                        $approvalCount = $record->approvalFlows()->count();
+                        $user = Auth::user();
+                        $approvalCount = $record->approvalFlows()->where('status', 'Aprovado')->count();
+                        
+                        // Controle de Fluxo Dupla
+                        if ($record->flow_type === 'Dupla') {
+                            if ($approvalCount === 0) {
+                                // 1ª Assinatura: Deve ser Diretor
+                                if ($user->role !== 'Diretor' && $user->role !== 'Super Admin') {
+                                    \Filament\Notifications\Notification::make()
+                                        ->title('Acesso Negado')
+                                        ->danger()
+                                        ->body('A primeira assinatura de um fluxo duplo deve ser realizada por um Diretor.')
+                                        ->send();
+                                    return;
+                                }
+                            } else {
+                                // 2ª Assinatura: Deve ser Advogado e não pode ser a mesma pessoa
+                                if ($user->role !== 'Advogado' && $user->role !== 'Super Admin') {
+                                    \Filament\Notifications\Notification::make()
+                                        ->title('Acesso Negado')
+                                        ->danger()
+                                        ->body('A assinatura final de um fluxo duplo deve ser realizada por uma Advogada.')
+                                        ->send();
+                                    return;
+                                }
+
+                                if ($record->approvalFlows()->where('assigned_to', $user->id)->exists()) {
+                                    \Filament\Notifications\Notification::make()
+                                        ->title('Assinatura Duplicada')
+                                        ->danger()
+                                        ->body('Você já assinou este documento. Um fluxo duplo exige dois assinantes diferentes.')
+                                        ->send();
+                                    return;
+                                }
+                            }
+                        }
+
                         $targetStatus = 'Aprovado';
                         
                         if ($record->flow_type === 'Dupla' && $approvalCount === 0) {
@@ -189,7 +228,7 @@ class ApprovalResource extends Resource
                             'status' => 'Aprovado',
                             'comment' => $data['comment'] ?? null,
                             'action_type' => 'Aprovação',
-                            'assigned_to' => Auth::id(),
+                            'assigned_to' => $user->id,
                             'approved_at' => now(),
                             'signature_hash' => hash('sha256', ($data['pin'] ?? '0000') . ($record->hash_sha256 ?? 'no-file') . request()->ip() . now()),
                         ]);
@@ -213,8 +252,22 @@ class ApprovalResource extends Resource
                             ->label('Motivo da Rejeição')
                             ->placeholder('Obrigatório: Descreva o motivo da recusa...')
                             ->required(),
+                        Forms\Components\ViewField::make('pin')
+                            ->view('filament.components.pin-input')
+                            ->required(),
                     ])
                     ->action(function (Approval $record, array $data) {
+                        // Validação do PIN
+                        if (! \Illuminate\Support\Facades\Hash::check($data['pin'], Auth::user()->pin_code)) {
+                            \Filament\Notifications\Notification::make()
+                                ->title('PIN Incorreto')
+                                ->danger()
+                                ->body('O PIN informado é inválido. A rejeição não pôde ser concluída.')
+                                ->send();
+                            
+                            return;
+                        }
+
                         ApprovalFlow::create([
                             'approval_id' => $record->id,
                             'step_name' => 'Rejeição',
@@ -223,7 +276,7 @@ class ApprovalResource extends Resource
                             'action_type' => 'Rejeição',
                             'assigned_to' => Auth::id(),
                             'approved_at' => now(),
-                            'signature_hash' => hash('sha256', 'REJETED' . $record->hash_sha256 . now()),
+                            'signature_hash' => hash('sha256', 'REJETED' . ($data['pin'] ?? '0000') . ($record->hash_sha256 ?? 'no-file') . now()),
                         ]);
 
                         $record->update(['status' => 'Rejeitado']);

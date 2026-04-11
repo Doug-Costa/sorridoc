@@ -14,6 +14,6 @@ class Notificacoes extends Page
 
     public static function getNavigationBadge(): ?string
     {
-        return '3'; // Hardcoded as per Image 1 for UI prototype
+        return null;
     }
 }

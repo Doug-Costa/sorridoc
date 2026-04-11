@@ -24,7 +24,7 @@ trait AuditLogTrait
 
     protected static function logAction($model, $action)
     {
-        $payload = clone $model;
+        $payload = $model->toArray();
         if ($action === 'Updated') {
             $payload = [
                 'old' => $model->getOriginal(),
