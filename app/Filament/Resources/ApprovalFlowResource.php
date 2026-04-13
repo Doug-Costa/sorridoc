@@ -22,10 +22,11 @@ class ApprovalFlowResource extends Resource
     protected static ?string $navigationGroup = 'PRINCIPAL';
     protected static ?int $navigationSort = 3;
 
-    public static function getNavigationBadge(): ?string
+    /* public static function getNavigationBadge(): ?string
     {
-        return Approval::where('status', 'Pendente')->count() ?: null;
-    }
+        $count = Approval::where('status', 'Pendente')->count();
+        return $count > 0 ? (string)$count : null;
+    } */
 
     public static function table(Table $table): Table
     {
@@ -48,7 +49,7 @@ class ApprovalFlowResource extends Resource
                     ->sortable(),
                 Tables\Columns\TextColumn::make('approved_at')
                     ->label('Data/Hora')
-                    ->dateTime()
+                    ->formatStateUsing(fn ($state) => $state ? $state->format('d/m/Y H:i') : '')
                     ->sortable(),
             ])
             ->filters([

@@ -32,7 +32,6 @@ class UserResource extends Resource
                 Forms\Components\TextInput::make('pin_code')
                     ->label('PIN de Assinatura (4 dígitos)')
                     ->password()
-                    ->numeric()
                     ->length(4)
                     ->helperText('Defina um código numérico de 4 dígitos para assinar eletronicamente.')
                     ->dehydrated(fn (?string $state) => filled($state)),
@@ -57,17 +56,18 @@ class UserResource extends Resource
     {
         return $table
             ->columns([
-                Tables\Columns\TextColumn::make('name')->searchable(),
-                Tables\Columns\TextColumn::make('email')->searchable(),
+                Tables\Columns\TextColumn::make('name'),
+                Tables\Columns\TextColumn::make('email'),
                 Tables\Columns\TextColumn::make('role')->sortable(),
                 Tables\Columns\TextColumn::make('unit')->sortable(),
-                Tables\Columns\TextColumn::make('created_at')->dateTime()->sortable()->toggleable(isToggledHiddenByDefault: true),
+
             ])
+            ->paginated([10, 25, 50])
             ->filters([])
             ->actions([Tables\Actions\EditAction::make()])
-            ->bulkActions([
+            /* ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([Tables\Actions\DeleteBulkAction::make()]),
-            ]);
+            ]) */;
     }
 
     public static function getRelations(): array { return []; }

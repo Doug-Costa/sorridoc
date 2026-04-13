@@ -39,6 +39,7 @@ trait AuditLogTrait
             'ip_address' => request()->ip(),
             'user_agent' => request()->userAgent(),
             'payload' => $payload,
+            'timestamp' => now(),
         ]);
     }
 }

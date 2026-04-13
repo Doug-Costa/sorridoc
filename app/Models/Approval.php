@@ -24,6 +24,7 @@ class Approval extends Model
         'owner_id',
         'deadline_at',
         'flow_type',
+        'assigned_to',
     ];
 
     protected static function booted()
@@ -42,6 +43,11 @@ class Approval extends Model
     public function owner()
     {
         return $this->belongsTo(User::class, 'owner_id');
+    }
+
+    public function assignedTo()
+    {
+        return $this->belongsTo(User::class, 'assigned_to');
     }
 
     public function approvalFlows()

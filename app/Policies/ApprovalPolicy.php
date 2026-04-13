@@ -12,7 +12,7 @@ class ApprovalPolicy
      */
     public function viewAny(User $user): bool
     {
-        return true; // Todos podem ver a listagem por enquanto
+        return true; // Filtering is handled at the resource query level
     }
 
     /**
@@ -20,13 +20,11 @@ class ApprovalPolicy
      */
     public function view(User $user, Approval $approval): bool
     {
-        // Administradores, Advogados e Diretores veem tudo. 
-        // Operacional vê apenas o que solicitou.
-        if (in_array($user->role, ['Super Admin', 'Advogado', 'Diretor'])) {
+        if ($user->role === 'Super Admin') {
             return true;
         }
 
-        return $user->id === $approval->owner_id;
+        return $user->id === $approval->owner_id || $user->id === $approval->assigned_to;
     }
 
     /**
@@ -34,7 +32,7 @@ class ApprovalPolicy
      */
     public function create(User $user): bool
     {
-        return true; // Todos podem solicitar aprovações
+        return true;
     }
 
     /**
@@ -42,7 +40,6 @@ class ApprovalPolicy
      */
     public function update(User $user, Approval $approval): bool
     {
-        // Apenas o dono pode editar se estiver pendente, ou Super Admin
         if ($user->role === 'Super Admin') {
             return true;
         }

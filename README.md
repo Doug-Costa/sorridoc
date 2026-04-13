@@ -17,6 +17,7 @@ O SorriDoc é uma plataforma profissional de gestão de aprovações jurídicas 
 - **Framework**: Laravel 11
 - **Painel Administrativo**: FilamentPHP v3
 - **Banco de Dados**: SQLite (MVP) ou MySQL
+- **Extensões PHP**: `intl` (Obrigatória para o Filament/Laravel 11), `gd` (QR Code)
 - **Dependências**: DomPDF (Certificados) e PHP-QRCode (Verificação)
 
 ## Configuração Local

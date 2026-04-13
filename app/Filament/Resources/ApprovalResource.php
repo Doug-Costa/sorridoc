@@ -24,11 +24,11 @@ class ApprovalResource extends Resource
     protected static ?string $navigationGroup = 'PRINCIPAL';
     protected static ?int $navigationSort = 2;
 
-    public static function getNavigationBadge(): ?string
+    /* public static function getNavigationBadge(): ?string
     {
         $count = static::getModel()::count();
         return $count > 0 ? (string)$count : null;
-    }
+    } */
 
     public static function infolist(Infolist $infolist): Infolist
     {
@@ -38,10 +38,7 @@ class ApprovalResource extends Resource
                     ->schema([
                         Infolists\Components\ViewEntry::make('progress')
                             ->view('filament.components.approval-progress')
-                            ->viewData([
-                                'record' => fn (Approval $record) => $record,
-                                'status' => fn (Approval $record) => $record->status,
-                            ])
+                            ->viewData(fn (Approval $record) => ['record' => $record])
                             ->columnSpanFull(),
                         
                         Infolists\Components\Grid::make(1)
@@ -70,7 +67,7 @@ class ApprovalResource extends Resource
                                     ->label('Solicitado por'),
                                 Infolists\Components\TextEntry::make('created_at')
                                     ->label('Data de Início')
-                                    ->dateTime(),
+                                    ->formatStateUsing(fn ($state) => $state ? $state->format('d/m/Y H:i') : ''),
                                 Infolists\Components\TextEntry::make('hash_sha256')
                                     ->label('Hash de Integridade')
                                     ->limit(12)
@@ -121,7 +118,27 @@ class ApprovalResource extends Resource
                     ->relationship('owner', 'name')
                     ->default(fn () => Auth::id())
                     ->required(),
+                Forms\Components\Select::make('assigned_to')
+                    ->label('Atribuído a')
+                    ->relationship('assignedTo', 'name')
+                    ->required()
+                    ->searchable()
+                    ->preload(),
             ]);
+    }
+
+    public static function getEloquentQuery(): \Illuminate\Database\Eloquent\Builder
+    {
+        $query = parent::getEloquentQuery();
+
+        if (Auth::user()->role === 'Super Admin') {
+            return $query;
+        }
+
+        return $query->where(function ($q) {
+            $q->where('assigned_to', Auth::id())
+                ->orWhere('owner_id', Auth::id());
+        });
     }
 
     public static function table(Table $table): Table
@@ -144,11 +161,13 @@ class ApprovalResource extends Resource
                     ->boolean()
                     ->state(fn (Approval $record) => $record->file_path !== null),
                 Tables\Columns\TextColumn::make('owner.name')->label('Solicitante'),
+                Tables\Columns\TextColumn::make('assignedTo.name')->label('Atribuído a'),
                 Tables\Columns\TextColumn::make('created_at')
                     ->label('Criado em')
-                    ->dateTime()
+                    ->formatStateUsing(fn ($state) => $state ? $state->format('d/m/Y H:i') : '')
                     ->sortable(),
             ])
+            ->paginated([10, 25, 50])
             ->filters([
                 Tables\Filters\SelectFilter::make('status')
                     ->options(['Pendente' => 'Pendente', 'Em Aprovação' => 'Em Aprovação', 'Aprovado' => 'Aprovado', 'Rejeitado' => 'Rejeitado']),
@@ -168,77 +187,20 @@ class ApprovalResource extends Resource
                             ->required(),
                     ])
                     ->action(function (Approval $record, array $data) {
-                        // Validação do PIN Real
-                        if (! \Illuminate\Support\Facades\Hash::check($data['pin'], Auth::user()->pin_code)) {
-                            \Filament\Notifications\Notification::make()
-                                ->title('PIN Incorreto')
-                                ->danger()
-                                ->body('O PIN informado é inválido. A assinatura não pôde ser concluída.')
-                                ->send();
+                        try {
+                            app(\App\Domain\Services\ApprovalService::class)->approve($record, $data['pin'], $data['comment']);
                             
-                            return;
+                            \Filament\Notifications\Notification::make()
+                                ->title($record->status === 'Aprovado' ? 'Aprovação Concluída' : '1ª Assinatura Registrada')
+                                ->success()
+                                ->send();
+                        } catch (\Exception $e) {
+                            \Filament\Notifications\Notification::make()
+                                ->title('Erro na Operação')
+                                ->danger()
+                                ->body($e->getMessage())
+                                ->send();
                         }
-
-                        $user = Auth::user();
-                        $approvalCount = $record->approvalFlows()->where('status', 'Aprovado')->count();
-                        
-                        // Controle de Fluxo Dupla
-                        if ($record->flow_type === 'Dupla') {
-                            if ($approvalCount === 0) {
-                                // 1ª Assinatura: Deve ser Diretor
-                                if ($user->role !== 'Diretor' && $user->role !== 'Super Admin') {
-                                    \Filament\Notifications\Notification::make()
-                                        ->title('Acesso Negado')
-                                        ->danger()
-                                        ->body('A primeira assinatura de um fluxo duplo deve ser realizada por um Diretor.')
-                                        ->send();
-                                    return;
-                                }
-                            } else {
-                                // 2ª Assinatura: Deve ser Advogado e não pode ser a mesma pessoa
-                                if ($user->role !== 'Advogado' && $user->role !== 'Super Admin') {
-                                    \Filament\Notifications\Notification::make()
-                                        ->title('Acesso Negado')
-                                        ->danger()
-                                        ->body('A assinatura final de um fluxo duplo deve ser realizada por uma Advogada.')
-                                        ->send();
-                                    return;
-                                }
-
-                                if ($record->approvalFlows()->where('assigned_to', $user->id)->exists()) {
-                                    \Filament\Notifications\Notification::make()
-                                        ->title('Assinatura Duplicada')
-                                        ->danger()
-                                        ->body('Você já assinou este documento. Um fluxo duplo exige dois assinantes diferentes.')
-                                        ->send();
-                                    return;
-                                }
-                            }
-                        }
-
-                        $targetStatus = 'Aprovado';
-                        
-                        if ($record->flow_type === 'Dupla' && $approvalCount === 0) {
-                            $targetStatus = 'Em Aprovação';
-                        }
-
-                        ApprovalFlow::create([
-                            'approval_id' => $record->id,
-                            'step_name' => ($approvalCount === 0 && $record->flow_type === 'Dupla') ? '1ª Aprovação (Diretor)' : 'Aprovação Final',
-                            'status' => 'Aprovado',
-                            'comment' => $data['comment'] ?? null,
-                            'action_type' => 'Aprovação',
-                            'assigned_to' => $user->id,
-                            'approved_at' => now(),
-                            'signature_hash' => hash('sha256', ($data['pin'] ?? '0000') . ($record->hash_sha256 ?? 'no-file') . request()->ip() . now()),
-                        ]);
-
-                        $record->update(['status' => $targetStatus]);
-
-                        \Filament\Notifications\Notification::make()
-                            ->title($targetStatus === 'Aprovado' ? 'Aprovação Concluída' : '1ª Assinatura Registrada')
-                            ->success()
-                            ->send();
                     })
                     ->visible(fn (Approval $record) => $record->status !== 'Aprovado' && $record->status !== 'Rejeitado'),
 
@@ -257,34 +219,20 @@ class ApprovalResource extends Resource
                             ->required(),
                     ])
                     ->action(function (Approval $record, array $data) {
-                        // Validação do PIN
-                        if (! \Illuminate\Support\Facades\Hash::check($data['pin'], Auth::user()->pin_code)) {
+                        try {
+                            app(\App\Domain\Services\ApprovalService::class)->reject($record, $data['pin'], $data['comment']);
+
                             \Filament\Notifications\Notification::make()
-                                ->title('PIN Incorreto')
+                                ->title('Aprovação Rejeitada')
                                 ->danger()
-                                ->body('O PIN informado é inválido. A rejeição não pôde ser concluída.')
                                 ->send();
-                            
-                            return;
+                        } catch (\Exception $e) {
+                            \Filament\Notifications\Notification::make()
+                                ->title('Erro na Operação')
+                                ->danger()
+                                ->body($e->getMessage())
+                                ->send();
                         }
-
-                        ApprovalFlow::create([
-                            'approval_id' => $record->id,
-                            'step_name' => 'Rejeição',
-                            'status' => 'Rejeitado',
-                            'comment' => $data['comment'],
-                            'action_type' => 'Rejeição',
-                            'assigned_to' => Auth::id(),
-                            'approved_at' => now(),
-                            'signature_hash' => hash('sha256', 'REJETED' . ($data['pin'] ?? '0000') . ($record->hash_sha256 ?? 'no-file') . now()),
-                        ]);
-
-                        $record->update(['status' => 'Rejeitado']);
-
-                        \Filament\Notifications\Notification::make()
-                            ->title('Aprovação Rejeitada')
-                            ->danger()
-                            ->send();
                     })
                     ->visible(fn (Approval $record) => $record->status !== 'Aprovado' && $record->status !== 'Rejeitado'),
                 

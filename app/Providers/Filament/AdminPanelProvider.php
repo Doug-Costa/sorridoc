@@ -27,6 +27,7 @@ class AdminPanelProvider extends PanelProvider
             ->id('admin')
             ->path('admin')
             ->login()
+            ->globalSearch(false)
             ->brandName('SorriDoc')
             ->brandLogo(null)
             ->favicon(null)
@@ -45,10 +46,10 @@ class AdminPanelProvider extends PanelProvider
                 'panels::body.end',
                 fn (): string => '<style>.fi-footer { display: none !important; }</style>',
             )
-            ->widgets([
+            /* ->widgets([
                 \Filament\Widgets\AccountWidget::class,
                 \App\Filament\Widgets\SupportWidget::class,
-            ])
+            ]) */
             ->discoverResources(in: app_path('Filament/Resources'), for: 'App\\Filament\\Resources')
             ->discoverPages(in: app_path('Filament/Pages'), for: 'App\\Filament\\Pages')
             ->pages([

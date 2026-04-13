@@ -9,12 +9,17 @@ class ApprovalFlowPolicy
 {
     public function viewAny(User $user): bool
     {
-        return $user->role !== 'Operacional';
+        return true; // Filtering should be handled by the resource/approval relationship
     }
 
     public function view(User $user, ApprovalFlow $approvalFlow): bool
     {
-        return $user->role !== 'Operacional';
+        if ($user->role === 'Super Admin') {
+            return true;
+        }
+
+        $approval = $approvalFlow->approval;
+        return $user->id === $approval->owner_id || $user->id === $approval->assigned_to;
     }
 
     public function create(User $user): bool
