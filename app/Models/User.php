@@ -2,20 +2,24 @@
 
 namespace App\Models;
 
-// use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Support\Str;
 
 class User extends Authenticatable
 {
     use HasFactory, Notifiable;
 
-    /**
-     * The attributes that are mass assignable.
-     *
-     * @var array<int, string>
-     */
+    public const ROLES = [
+        'Super Admin' => 'Super Admin',
+        'Advogado' => 'Advogado',
+        'Diretor' => 'Diretor',
+        'Operacional' => 'Operacional',
+        'Gestor RH' => 'Gestor RH',
+    ];
+
     protected $fillable = [
         'name',
         'email',
@@ -24,30 +28,81 @@ class User extends Authenticatable
         'unit',
         '2fa_secret',
         'pin_code',
+        'company_id',
+        'access_token',
+        'token_expires_at',
+        'last_access_at',
     ];
 
-    /**
-     * The attributes that should be hidden for serialization.
-     *
-     * @var array<int, string>
-     */
     protected $hidden = [
         'password',
         'remember_token',
         'pin_code',
+        'access_token',
     ];
 
-    /**
-     * Get the attributes that should be cast.
-     *
-     * @return array<string, string>
-     */
     protected function casts(): array
     {
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
             'pin_code' => 'hashed',
+            'token_expires_at' => 'datetime',
+            'last_access_at' => 'datetime',
         ];
+    }
+
+    public function company(): BelongsTo
+    {
+        return $this->belongsTo(Company::class);
+    }
+
+    public function isSuperAdmin(): bool
+    {
+        return $this->role === 'Super Admin';
+    }
+
+    public function isGestorRH(): bool
+    {
+        return $this->role === 'Gestor RH';
+    }
+
+    public function canAccessCompany(Company $company): bool
+    {
+        if ($this->isSuperAdmin()) {
+            return true;
+        }
+
+        if ($this->isGestorRH() && $this->company_id === $company->id) {
+            return true;
+        }
+
+        return false;
+    }
+
+    public function generateAccessToken(int $expiresDays = 30): string
+    {
+        $token = Str::random(64);
+        $this->update([
+            'access_token' => hash('sha256', $token),
+            'token_expires_at' => now()->addDays($expiresDays),
+        ]);
+
+        return $token;
+    }
+
+    public function isTokenValid(string $token): bool
+    {
+        if (! $this->access_token || ! $this->token_expires_at) {
+            return false;
+        }
+
+        return hash_equals($this->access_token, hash('sha256', $token))
+            && $this->token_expires_at->isFuture();
+    }
+
+    public function recordAccess(): void
+    {
+        $this->update(['last_access_at' => now()]);
     }
 }

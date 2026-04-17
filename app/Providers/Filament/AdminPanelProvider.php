@@ -2,15 +2,21 @@
 
 namespace App\Providers\Filament;
 
+use App\Filament\Portal\CompanyResource\CompanyResource;
+use App\Filament\Portal\WorkerDocumentResource\WorkerDocumentResource;
+use App\Filament\Portal\WorkerResource\WorkerResource;
+use App\Filament\Resources\ApprovalFlowResource;
+use App\Filament\Resources\ApprovalResource;
+use App\Filament\Resources\UserResource;
 use Filament\Http\Middleware\Authenticate;
 use Filament\Http\Middleware\AuthenticateSession;
 use Filament\Http\Middleware\DisableBladeIconComponents;
 use Filament\Http\Middleware\DispatchServingFilamentEvent;
+use Filament\Navigation\NavigationGroup;
 use Filament\Pages;
 use Filament\Panel;
 use Filament\PanelProvider;
 use Filament\Support\Colors\Color;
-use Filament\Widgets;
 use Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse;
 use Illuminate\Cookie\Middleware\EncryptCookies;
 use Illuminate\Foundation\Http\Middleware\VerifyCsrfToken;
@@ -33,24 +39,29 @@ class AdminPanelProvider extends PanelProvider
             ->favicon(null)
             ->sidebarCollapsibleOnDesktop()
             ->colors([
-                'primary' => \Filament\Support\Colors\Color::Indigo,
-                'gray' => \Filament\Support\Colors\Color::Slate,
+                'primary' => Color::Indigo,
+                'gray' => Color::Slate,
             ])
             ->navigationGroups([
-                \Filament\Navigation\NavigationGroup::make()
-                     ->label('PRINCIPAL'),
-                \Filament\Navigation\NavigationGroup::make()
+                NavigationGroup::make()
+                    ->label('PRINCIPAL'),
+                NavigationGroup::make()
+                    ->label('PORTAL SORRIMED'),
+                NavigationGroup::make()
                     ->label('CONFIGURAÇÕES'),
             ])
             ->renderHook(
                 'panels::body.end',
                 fn (): string => '<style>.fi-footer { display: none !important; }</style>',
             )
-            /* ->widgets([
-                \Filament\Widgets\AccountWidget::class,
-                \App\Filament\Widgets\SupportWidget::class,
-            ]) */
-            ->discoverResources(in: app_path('Filament/Resources'), for: 'App\\Filament\\Resources')
+            ->resources([
+                ApprovalResource::class,
+                ApprovalFlowResource::class,
+                UserResource::class,
+                CompanyResource::class,
+                WorkerResource::class,
+                WorkerDocumentResource::class,
+            ])
             ->discoverPages(in: app_path('Filament/Pages'), for: 'App\\Filament\\Pages')
             ->pages([
                 Pages\Dashboard::class,

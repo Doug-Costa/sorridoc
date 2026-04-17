@@ -26,12 +26,20 @@
             "App\\": "app/",
             "Database\\Factories\\": "database/factories/",
             "Database\\Seeders\\": "database/seeders/"
-        }
+        },
+        "classmap": [
+            "app/Filament/Resources/CompanyResource",
+            "app/Filament/Resources/WorkerResource",
+            "app/Filament/Resources/WorkerDocumentResource"
+        ]
     },
     "autoload-dev": {
         "psr-4": {
             "Tests\\": "tests/"
-        }
+        },
+        "exclude-from-classmap": [
+            "../vendor/laravel/pint/app"
+        ]
     },
     "scripts": {
         "post-autoload-dump": [

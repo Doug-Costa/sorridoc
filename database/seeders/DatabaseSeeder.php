@@ -13,6 +13,10 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
+        $this->call([
+            SorriMedSeeder::class,
+        ]);
+
         User::factory()->create([
             'name' => 'Dra. Regina Alves (Super Admin)',
             'email' => 'admin@sorridoc.com.br',
