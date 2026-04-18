@@ -10,6 +10,19 @@ class WorkerDocument extends Model
 {
     use \App\Traits\AuditLogTrait, HasFactory;
 
+    protected static function boot()
+
+    {
+        parent::boot();
+
+        static::creating(function ($model) {
+            if (!$model->uploaded_by && auth()->check()) {
+                $model->uploaded_by = auth()->id();
+            }
+        });
+    }
+
+
     protected $fillable = [
         'worker_id',
         'uploaded_by',
