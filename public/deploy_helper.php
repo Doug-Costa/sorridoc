@@ -51,10 +51,34 @@ runCommand('migrate --force', 'Executando migrações do banco de dados');
 // 2. Limpeza de Caches
 runCommand('optimize:clear', 'Limpando e otimizando caches');
 
+// 3. Garantir Usuário Administrador
+echo "<h3>> Verificando usuário administrador...</h3>";
+try {
+    $email = 'admin@sorridoc.com.br';
+    $admin = \App\Models\User::where('email', $email)->first();
+    
+    if (!$admin) {
+        echo "<p>Usuário não encontrado. Criando novo administrador...</p>";
+        $admin = new \App\Models\User();
+        $admin->name = 'Administrador';
+        $admin->email = $email;
+    }
+    
+    $admin->password = \Illuminate\Support\Facades\Hash::make('password');
+    $admin->email_verified_at = now();
+    $admin->save();
+    
+    echo "<p class='success'>✓ Administrador configurado com sucesso!</p>";
+    echo "<ul><li><b>Login:</b> {$email}</li><li><b>Senha:</b> password</li></ul>";
+
+} catch (\Exception $e) {
+    echo "<p class='error'>✗ Erro na configuração do usuário: " . $e->getMessage() . "</p>";
+}
+
 echo "<p class='success'>✓ Deploy realizado com sucesso!</p>";
 echo "<p><b>Nota:</b> O comando <i>storage:link</i> foi ignorado para evitar restrições da hospedagem. Se as imagens/downloads falharem, crie o link simbólico pelo painel da Hostinger.</p>";
 
-echo "<hr><p style='color: #ef4444; font-weight: bold; text-align: center;'>⚠️ IMPORTANTE: EXCLUA ESTE ARQUIVO DO SERVIDOR AGORA! ⚠️</p>";
+echo "<hr><p style='color: #ef4444; font-weight: bold; text-align: center;'>⚠️ IMPORTANTE: EXCLUA ESTE ARQUIVO DO SERVIDOR APÓS O USO! ⚠️</p>";
 echo "</div></body></html>";
 
 $kernel->terminate($request, $response);
