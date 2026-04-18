@@ -1,84 +1,70 @@
 <?php
 
 /**
- * SorriDoc Deploy Helper v2 - Portal SorriMed Update
- * Este script auxilia na sincronização do ambiente em hospedagens compartilhadas.
+ * SorriDoc Deploy Helper
+ * Utilitário para execução de comandos Artisan em hospedagem compartilhada.
  */
 
-use Illuminate\Support\Facades\Artisan;
-use App\Models\User;
-use Illuminate\Support\Facades\DB;
+// SEGURANÇA: Defina uma senha simples ou remova este arquivo após o uso!
+$token = 'sorridoc_deploy_2024'; 
 
-$autoloadPath = __DIR__ . '/../vendor/autoload.php';
-$appPath = __DIR__ . '/../bootstrap/app.php';
-
-if (!file_exists($autoloadPath) || !file_exists($appPath)) {
-    die("Erro: Não foi possível localizar o diretório 'vendor' ou 'bootstrap'.");
+if (!isset($_GET['token']) || $_GET['token'] !== $token) {
+    die('Acesso não autorizado. Use ?token=' . $token);
 }
 
-require $autoloadPath;
-$app = require_once $appPath;
+// Caminho para o autoload do Laravel
+require __DIR__ . '/../vendor/autoload.php';
+$app = require_once __DIR__ . '/../bootstrap/app.php';
+$kernel = $app->make(Illuminate\Contracts\Console\Kernel::class);
 
-$kernel = $app->make(Illuminate\Contracts\Http\Kernel::class);
-$response = $kernel->handle(
-    $request = Illuminate\Http\Request::capture()
-);
-
-echo "<html><head><title>SorriDoc Deploy Helper</title>";
-echo "<style>body { font-family: sans-serif; line-height: 1.6; padding: 20px; background: #f4f4f9; color: #333; } 
-      .container { max-width: 800px; margin: auto; background: #fff; padding: 30px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
-      h1 { color: #4f46e5; border-bottom: 2px solid #eef2ff; padding-bottom: 10px; }
-      .success { color: #059669; font-weight: bold; }
-      .error { color: #dc2626; font-weight: bold; }
-      pre { background: #1e293b; color: #f8fafc; padding: 15px; border-radius: 5px; overflow-x: auto; font-size: 14px; }</style>";
-echo "</head><body><div class='container'>";
-echo "<h1>🚀 SorriDoc Deploy Helper (Portal Update)</h1>";
-
-function runCommand($command, $description) {
-    echo "<h3>> {$description}...</h3>";
-    try {
-        Artisan::call($command);
-        echo "<pre>" . Artisan::output() . "</pre>";
-        echo "<p class='success'>✓ Concluído com sucesso.</p>";
-    } catch (\Exception $e) {
-        echo "<p class='error'>✗ Erro ao executar: " . $e->getMessage() . "</p>";
-    }
+function run($command, $kernel) {
+    echo "<h3>Executando: php artisan $command</h3>";
+    $status = $kernel->call($command);
+    echo "<pre>";
+    echo Illuminate\Support\Facades\Artisan::output();
+    echo "</pre>";
+    echo "<hr>";
+    return $status;
 }
 
-// 1. Migrações (Incluindo permissões granulares)
-runCommand('migrate --force', 'Executando migrações do banco de dados');
+$action = $_GET['action'] ?? 'status';
 
-// 2. Limpeza de Caches
-runCommand('optimize:clear', 'Limpando e otimizando caches');
+echo "<h1>SorriDoc Deploy Helper</h1>";
+echo "<nav>
+    <a href='?token=$token&action=status'>[ Status ]</a> | 
+    <a href='?token=$token&action=migrate'>[ Rodar Migrações ]</a> | 
+    <a href='?token=$token&action=clear'>[ Limpar TUDO (Cache/Config/View) ]</a> | 
+    <a href='?token=$token&action=optimize'>[ Otimizar (Cache Novo) ]</a> |
+    <a href='?token=$token&action=storage_link'>[ Criar Storage Link ]</a>
+</nav><hr>";
 
-// 3. Garantir Usuário Administrador
-echo "<h3>> Verificando usuário administrador...</h3>";
-try {
-    $email = 'admin@sorridoc.com.br';
-    $admin = \App\Models\User::where('email', $email)->first();
-    
-    if (!$admin) {
-        echo "<p>Usuário não encontrado. Criando novo administrador...</p>";
-        $admin = new \App\Models\User();
-        $admin->name = 'Administrador';
-        $admin->email = $email;
-    }
-    
-    $admin->password = \Illuminate\Support\Facades\Hash::make('password');
-    $admin->email_verified_at = now();
-    $admin->save();
-    
-    echo "<p class='success'>✓ Administrador configurado com sucesso!</p>";
-    echo "<ul><li><b>Login:</b> {$email}</li><li><b>Senha:</b> password</li></ul>";
+switch ($action) {
+    case 'migrate':
+        run('migrate --force', $kernel);
+        break;
 
-} catch (\Exception $e) {
-    echo "<p class='error'>✗ Erro na configuração do usuário: " . $e->getMessage() . "</p>";
+    case 'clear':
+        run('cache:clear', $kernel);
+        run('config:clear', $kernel);
+        run('route:clear', $kernel);
+        run('view:clear', $kernel);
+        break;
+
+    case 'optimize':
+        run('config:cache', $kernel);
+        run('route:cache', $kernel);
+        run('view:cache', $kernel);
+        break;
+
+    case 'storage_link':
+        run('storage:link', $kernel);
+        break;
+
+    case 'status':
+        echo "Pronto para ação. Escolha um comando acima.";
+        break;
+
+    default:
+        echo "Ação desconhecida.";
+        break;
 }
-
-echo "<p class='success'>✓ Deploy realizado com sucesso!</p>";
-echo "<p><b>Nota:</b> O comando <i>storage:link</i> foi ignorado para evitar restrições da hospedagem. Se as imagens/downloads falharem, crie o link simbólico pelo painel da Hostinger.</p>";
-
-echo "<hr><p style='color: #ef4444; font-weight: bold; text-align: center;'>⚠️ IMPORTANTE: EXCLUA ESTE ARQUIVO DO SERVIDOR APÓS O USO! ⚠️</p>";
-echo "</div></body></html>";
-
-$kernel->terminate($request, $response);
