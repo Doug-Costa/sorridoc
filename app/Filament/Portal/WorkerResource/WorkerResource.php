@@ -126,21 +126,6 @@ class WorkerResource extends Resource
                     ->options(['Ativo' => 'Ativo', 'Inativo' => 'Inativo']),
             ])
             ->actions([
-                Tables\Actions\Action::make('generateAccessToken')
-                    ->label('Gerar Token')
-                    ->icon('heroicon-o-key')
-                    ->color('warning')
-                    ->requiresConfirmation()
-                    ->action(function (Worker $record) {
-                        $plainToken = $record->generateAccessToken(365);
-
-                        Notification::make()
-                            ->title('Token de Acesso Gerado')
-                            ->body('O trabalhador pode acessar com este token.')
-                            ->success()
-                            ->send();
-                    })
-                    ->visible(fn () => Auth::user()->role === 'Super Admin'),
 
                 Tables\Actions\ViewAction::make(),
                 Tables\Actions\EditAction::make(),

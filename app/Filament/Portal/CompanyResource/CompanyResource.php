@@ -95,15 +95,6 @@ class CompanyResource extends Resource
                             ->required(),
                     ]),
 
-                Forms\Components\Section::make('Token de Acesso')
-                    ->schema([
-                        Forms\Components\Placeholder::make('registration_token')
-                            ->label('Token de Registro')
-                            ->content(fn ($record) => $record?->registration_token ? '****'.substr($record->registration_token, -8) : 'Nenhum'),
-                        Forms\Components\Placeholder::make('token_expires_at')
-                            ->label('Expira em')
-                            ->content(fn ($record) => $record?->token_expires_at?->format('d/m/Y H:i') ?? 'N/A'),
-                    ]),
             ]);
     }
 
@@ -142,23 +133,6 @@ class CompanyResource extends Resource
                     ->options(['Ativo' => 'Ativo', 'Inativo' => 'Inativo', 'Pendente' => 'Pendente']),
             ])
             ->actions([
-                Tables\Actions\Action::make('generateToken')
-                    ->label('Gerar Token')
-                    ->icon('heroicon-o-key')
-                    ->color('warning')
-                    ->requiresConfirmation()
-                    ->action(function (Company $record) {
-                        $plainToken = $record->generateRegistrationToken(30);
-                        $url = url('/rh/'.$plainToken);
-
-                        Notification::make()
-                            ->title('Token Gerado')
-                            ->body("URL de acesso: {$url}")
-                            ->success()
-                            ->persistent()
-                            ->send();
-                    })
-                    ->visible(fn () => Auth::user()->role === 'Super Admin'),
 
                 Tables\Actions\ViewAction::make(),
                 Tables\Actions\EditAction::make(),
