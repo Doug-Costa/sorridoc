@@ -17,7 +17,7 @@ Route::prefix('portal')->name('portal.')->group(function () {
     Route::post('/logout', [PortalAuthController::class, 'logout'])->name('logout');
 
     // Protected Routes
-    Route::middleware(['auth', 'portal.access'])->group(function () {
+    Route::middleware(['portal.access'])->group(function () {
         Route::get('/', function () {
             $user = Auth::user();
             return $user->role === 'Empresa' ? redirect()->route('portal.company.dashboard') : redirect()->route('portal.worker.dashboard');
@@ -28,6 +28,9 @@ Route::prefix('portal')->name('portal.')->group(function () {
         Route::get('/download/{document}', [PortalController::class, 'downloadDocument'])->name('download');
     });
 });
+
+// Fallback login route for system compatibility
+Route::get('/login', fn() => redirect()->route('portal.login'))->name('login');
 
 Route::middleware(['auth'])->group(function () {
     Route::get('/approvals/download/{approval}', [ApprovalController::class, 'downloadCertificate'])->name('approvals.download');

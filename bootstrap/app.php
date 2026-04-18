@@ -21,6 +21,9 @@ return Application::configure(basePath: dirname(__DIR__))
             'portal.access' => \App\Http\Middleware\PortalAccessMiddleware::class,
         ]);
 
+        $middleware->redirectTo(
+            guests: '/portal/login',
+        );
     })
     ->withExceptions(function (Exceptions $exceptions) {
         //

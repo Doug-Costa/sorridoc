@@ -115,12 +115,12 @@ class ApprovalResource extends Resource
                     ->label('Prazo limite')
                     ->required(),
                 Forms\Components\Select::make('owner_id')
-                    ->relationship('owner', 'name')
+                    ->relationship('owner', 'name', fn (\Illuminate\Database\Eloquent\Builder $query) => $query->internal())
                     ->default(fn () => Auth::id())
                     ->required(),
                 Forms\Components\Select::make('assigned_to')
                     ->label('Atribuído a')
-                    ->relationship('assignedTo', 'name')
+                    ->relationship('assignedTo', 'name', fn (\Illuminate\Database\Eloquent\Builder $query) => $query->internal())
                     ->required()
                     ->searchable()
                     ->preload(),

@@ -123,4 +123,12 @@ class User extends Authenticatable
     {
         $this->update(['last_access_at' => now()]);
     }
+
+    /**
+     * Scope a query to only include internal operational users.
+     */
+    public function scopeInternal(\Illuminate\Database\Eloquent\Builder $query): \Illuminate\Database\Eloquent\Builder
+    {
+        return $query->whereNotIn('role', ['Empresa', 'Funcionario']);
+    }
 }
