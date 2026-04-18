@@ -1,25 +1,19 @@
 <?php
 
 /**
- * SorriDoc Deploy Helper
+ * SorriDoc Deploy Helper v2 - Portal SorriMed Update
  * Este script auxilia na sincronização do ambiente em hospedagens compartilhadas.
- * 
- * INSTRUÇÕES:
- * 1. Envie este arquivo para a pasta 'public' do seu servidor.
- * 2. Acesse seu-dominio.com/deploy_helper.php
- * 3. Após a execução bem-sucedida, EXCLUA este arquivo do servidor por segurança.
  */
 
 use Illuminate\Support\Facades\Artisan;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
 
-// Tenta carregar o autoloader do Laravel
 $autoloadPath = __DIR__ . '/../vendor/autoload.php';
 $appPath = __DIR__ . '/../bootstrap/app.php';
 
 if (!file_exists($autoloadPath) || !file_exists($appPath)) {
-    die("Erro: Não foi possível localizar o diretório 'vendor' ou 'bootstrap'. Certifique-se de que o projeto Laravel foi enviado corretamente.");
+    die("Erro: Não foi possível localizar o diretório 'vendor' ou 'bootstrap'.");
 }
 
 require $autoloadPath;
@@ -38,7 +32,7 @@ echo "<style>body { font-family: sans-serif; line-height: 1.6; padding: 20px; ba
       .error { color: #dc2626; font-weight: bold; }
       pre { background: #1e293b; color: #f8fafc; padding: 15px; border-radius: 5px; overflow-x: auto; font-size: 14px; }</style>";
 echo "</head><body><div class='container'>";
-echo "<h1>🚀 SorriDoc Deploy Helper</h1>";
+echo "<h1>🚀 SorriDoc Deploy Helper (Portal Update)</h1>";
 
 function runCommand($command, $description) {
     echo "<h3>> {$description}...</h3>";
@@ -51,40 +45,16 @@ function runCommand($command, $description) {
     }
 }
 
-// 1. Migrações
-runCommand('migrate --force', 'Executando migrações do banco de dados');
+// 1. Migrações (Incluindo a nova worker_id)
+runCommand('migrate --force', 'Executando migrações do banco de dados (Novas tabelas e campos do Portal)');
 
 // 2. Limpeza de Caches
-runCommand('optimize:clear', 'Limpando e otimizando caches (config, route, view)');
+runCommand('optimize:clear', 'Limpando e otimizando caches');
 
-// 3. Correção de Acesso do Administrador
-echo "<h3>> Verificando permissões de administrador...</h3>";
-try {
-    $email = 'admin@sorridoc.com.br';
-    $user = User::where('email', $email)->first();
+// 3. Link simbólico de storage (essencial para download de documentos)
+runCommand('storage:link', 'Criando link simbólico para documentos (storage:link)');
 
-    if ($user) {
-        $user->role = 'Super Admin';
-        $user->save();
-        echo "<p class='success'>✓ Usuário '{$email}' agora possui o papel 'Super Admin'.</p>";
-    } else {
-        echo "<p class='error'>⚠ Usuário '{$email}' não encontrado no banco de dados.</p>";
-        
-        // Opcional: Criar o usuário se ele não existir
-        /*
-        User::create([
-            'name' => 'Administrador',
-            'email' => $email,
-            'password' => bcrypt('MUDAR_SENHA_AQUI'),
-            'role' => 'Super Admin',
-        ]);
-        echo "<p class='success'>✓ Usuário '{$email}' foi criado com sucesso.</p>";
-        */
-    }
-} catch (\Exception $e) {
-    echo "<p class='error'>✗ Erro ao atualizar usuário: " . $e->getMessage() . "</p>";
-}
-
+echo "<p class='success'>✓ Tudo pronto! O Portal agora está acessível em seu-dominio.com.br/portal</p>";
 echo "<hr><p style='color: #ef4444; font-weight: bold; text-align: center;'>⚠️ IMPORTANTE: EXCLUA ESTE ARQUIVO DO SERVIDOR AGORA! ⚠️</p>";
 echo "</div></body></html>";
 

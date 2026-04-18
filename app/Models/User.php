@@ -18,7 +18,10 @@ class User extends Authenticatable
         'Diretor' => 'Diretor',
         'Operacional' => 'Operacional',
         'Gestor RH' => 'Gestor RH',
+        'Empresa' => 'Empresa',
+        'Funcionario' => 'Funcionario',
     ];
+
 
     protected $fillable = [
         'name',
@@ -56,6 +59,12 @@ class User extends Authenticatable
     {
         return $this->belongsTo(Company::class);
     }
+
+    public function worker(): BelongsTo
+    {
+        return $this->belongsTo(Worker::class);
+    }
+
 
     public function isSuperAdmin(): bool
     {

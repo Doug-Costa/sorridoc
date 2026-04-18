@@ -18,7 +18,9 @@ return Application::configure(basePath: dirname(__DIR__))
             'rh.session' => RhSessionMiddleware::class,
             'worker.session' => WorkerSessionMiddleware::class,
             'upload.session' => UploadSessionMiddleware::class,
+            'portal.access' => \App\Http\Middleware\PortalAccessMiddleware::class,
         ]);
+
     })
     ->withExceptions(function (Exceptions $exceptions) {
         //

@@ -37,12 +37,23 @@ class UserResource extends Resource
                     ->dehydrated(fn (?string $state) => filled($state)),
                 Forms\Components\Select::make('role')
                     ->label('Papel')
-                    ->options([
-                        'Super Admin' => 'Super Admin',
-                        'Advogado' => 'Advogado',
-                        'Diretor' => 'Diretor',
-                        'Operacional' => 'Operacional',
-                    ])->required()->default('Operacional'),
+                    ->options(User::ROLES)
+                    ->required()
+                    ->live()
+                    ->default('Operacional'),
+                Forms\Components\Select::make('company_id')
+                    ->label('Empresa Vinculada')
+                    ->relationship('company', 'fantasy_name')
+                    ->visible(fn (Forms\Get $get) => $get('role') === 'Empresa' || $get('role') === 'Gestor RH')
+                    ->searchable()
+                    ->preload(),
+                Forms\Components\Select::make('worker_id')
+                    ->label('Funcionário Vinculado')
+                    ->relationship('worker', 'name')
+                    ->visible(fn (Forms\Get $get) => $get('role') === 'Funcionario')
+                    ->searchable()
+                    ->preload(),
+
                 Forms\Components\Select::make('unit')
                     ->label('Unidade')
                     ->options([
