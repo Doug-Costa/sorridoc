@@ -1,89 +1,91 @@
 <?php
 
 /**
- * SorriDoc - Auxiliar de Deploy (Hostinger Shared)
+ * SorriDoc Deploy Helper
+ * Este script auxilia na sincronização do ambiente em hospedagens compartilhadas.
+ * 
+ * INSTRUÇÕES:
+ * 1. Envie este arquivo para a pasta 'public' do seu servidor.
+ * 2. Acesse seu-dominio.com/deploy_helper.php
+ * 3. Após a execução bem-sucedida, EXCLUA este arquivo do servidor por segurança.
  */
 
-$rootPath = __DIR__ . '/..';
-$envPath = $rootPath . '/.env';
-$examplePath = $rootPath . '/.env.example';
+use Illuminate\Support\Facades\Artisan;
+use App\Models\User;
+use Illuminate\Support\Facades\DB;
 
-// Ação manual: Criar .env se não existir
-if (isset($_GET['cmd']) && $_GET['cmd'] === 'create_env') {
-    if (file_exists($examplePath)) {
-        copy($examplePath, $envPath);
-        echo "<p style='color:green'>Arquivo .env criado com sucesso a partir do .env.example!</p>";
-        echo "<a href='deploy_helper.php'>Voltar e Continuar</a>";
-        exit;
-    } else {
-        die("Erro fatal: .env.example não foi encontrado no root.");
-    }
+// Tenta carregar o autoloader do Laravel
+$autoloadPath = __DIR__ . '/../vendor/autoload.php';
+$appPath = __DIR__ . '/../bootstrap/app.php';
+
+if (!file_exists($autoloadPath) || !file_exists($appPath)) {
+    die("Erro: Não foi possível localizar o diretório 'vendor' ou 'bootstrap'. Certifique-se de que o projeto Laravel foi enviado corretamente.");
 }
 
-// Verifica se o .env existe antes de carregar o Laravel
-if (!file_exists($envPath)) {
-    echo "<h2>O arquivo .env não foi encontrado na Hostinger!</h2>";
-    echo "<p>Isso acontece porque o Git normalmente ignora esse arquivo por segurança.</p>";
-    echo "<a href='?cmd=create_env' style='padding: 10px 20px; background: #4f46e5; color: white; text-decoration: none; border-radius: 5px;'>Criar .env agora</a>";
-    echo "<br><br><p>Após criar, você precisará editar os dados do banco no Gerenciador de Arquivos da Hostinger.</p>";
-    exit;
-}
+require $autoloadPath;
+$app = require_once $appPath;
 
-// Autoload do Laravel
-require $rootPath . '/vendor/autoload.php';
-$app = require_once $rootPath . '/bootstrap/app.php';
 $kernel = $app->make(Illuminate\Contracts\Http\Kernel::class);
-$kernel->handle(Illuminate\Http\Request::capture());
+$response = $kernel->handle(
+    $request = Illuminate\Http\Request::capture()
+);
 
-echo "<h2>SorriDoc Deployment Helper</h2>";
+echo "<html><head><title>SorriDoc Deploy Helper</title>";
+echo "<style>body { font-family: sans-serif; line-height: 1.6; padding: 20px; background: #f4f4f9; color: #333; } 
+      .container { max-width: 800px; margin: auto; background: #fff; padding: 30px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+      h1 { color: #4f46e5; border-bottom: 2px solid #eef2ff; padding-bottom: 10px; }
+      .success { color: #059669; font-weight: bold; }
+      .error { color: #dc2626; font-weight: bold; }
+      pre { background: #1e293b; color: #f8fafc; padding: 15px; border-radius: 5px; overflow-x: auto; font-size: 14px; }</style>";
+echo "</head><body><div class='container'>";
+echo "<h1>🚀 SorriDoc Deploy Helper</h1>";
 
-$command = $_GET['cmd'] ?? null;
-
-if (!$command) {
-    echo "<ul>";
-    echo "<li><a href='?cmd=key'>Gerar APP_KEY (Obrigatório se der erro 500)</a></li>";
-    echo "<li><a href='?cmd=migrate'>Rodar Migrações (Migrate)</a></li>";
-    echo "<li><a href='?cmd=create_admin'>Criar Novo Usuário Admin</a></li>";
-    echo "<li><a href='?cmd=storage_link'>Criar Link Simbólico (Storage:link)</a></li>";
-    echo "<li><a href='?cmd=optimize'>Otimizar Tudo (Cache, View, Route)</a></li>";
-    echo "<li><a href='?cmd=clear'>Limpar Todos os Caches</a></li>";
-    echo "</ul>";
+function runCommand($command, $description) {
+    echo "<h3>> {$description}...</h3>";
+    try {
+        Artisan::call($command);
+        echo "<pre>" . Artisan::output() . "</pre>";
+        echo "<p class='success'>✓ Concluído com sucesso.</p>";
+    } catch (\Exception $e) {
+        echo "<p class='error'>✗ Erro ao executar: " . $e->getMessage() . "</p>";
+    }
 }
 
+// 1. Migrações
+runCommand('migrate --force', 'Executando migrações do banco de dados');
+
+// 2. Limpeza de Caches
+runCommand('optimize:clear', 'Limpando e otimizando caches (config, route, view)');
+
+// 3. Correção de Acesso do Administrador
+echo "<h3>> Verificando permissões de administrador...</h3>";
 try {
-    if ($command === 'create_admin') {
-        $user = \App\Models\User::updateOrCreate(
-            ['email' => 'admin@sorridoc.com.br'],
-            [
-                'name' => 'Super Admin',
-                'password' => \Illuminate\Support\Facades\Hash::make('admin123'),
-                'pin_code' => '1234', // Definindo um PIN padrão inicial
-                'role' => 'Super Admin', // O Policy usa este campo
-            ]
-        );
-        echo "<pre>Usuário Criado!</pre>";
-        echo "<p style='color:green'>Login: <b>admin@sorridoc.com.br</b><br>Senha: <b>admin123</b><br>PIN: <b>1234</b></p>";
-    }
+    $email = 'admin@sorridoc.com.br';
+    $user = User::where('email', $email)->first();
 
-    if ($command === 'key') {
-        \Illuminate\Support\Facades\Artisan::call('key:generate', ['--force' => true]);
-        echo "<pre>" . \Illuminate\Support\Facades\Artisan::output() . "</pre>";
-        echo "<p style='color:green'>Chave de segurança gerada!</p>";
-    }
-
-    if ($command === 'migrate') {
-        \Illuminate\Support\Facades\Artisan::call('migrate', ['--force' => true]);
-        echo "<pre>" . \Illuminate\Support\Facades\Artisan::output() . "</pre>";
-        echo "<p style='color:green'>Migrações executadas!</p>";
-    }
-
-    if ($command === 'storage_link') {
-        \Illuminate\Support\Facades\Artisan::call('storage:link');
-        echo "<pre>" . \Illuminate\Support\Facades\Artisan::output() . "</pre>";
-        echo "<p style='color:green'>Storage Link criado!</p>";
+    if ($user) {
+        $user->role = 'Super Admin';
+        $user->save();
+        echo "<p class='success'>✓ Usuário '{$email}' agora possui o papel 'Super Admin'.</p>";
+    } else {
+        echo "<p class='error'>⚠ Usuário '{$email}' não encontrado no banco de dados.</p>";
+        
+        // Opcional: Criar o usuário se ele não existir
+        /*
+        User::create([
+            'name' => 'Administrador',
+            'email' => $email,
+            'password' => bcrypt('MUDAR_SENHA_AQUI'),
+            'role' => 'Super Admin',
+        ]);
+        echo "<p class='success'>✓ Usuário '{$email}' foi criado com sucesso.</p>";
+        */
     }
 } catch (\Exception $e) {
-    echo "<p style='color:red'>Erro operacional: " . $e->getMessage() . "</p>";
+    echo "<p class='error'>✗ Erro ao atualizar usuário: " . $e->getMessage() . "</p>";
 }
 
-echo "<br><hr><a href='deploy_helper.php'>Voltar</a>";
+echo "<hr><p style='color: #ef4444; font-weight: bold; text-align: center;'>⚠️ IMPORTANTE: EXCLUA ESTE ARQUIVO DO SERVIDOR AGORA! ⚠️</p>";
+echo "</div></body></html>";
+
+$kernel->terminate($request, $response);
