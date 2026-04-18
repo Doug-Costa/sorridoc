@@ -37,6 +37,16 @@ class Company extends Model
         'registration_token',
     ];
 
+    public function workerDocuments(): HasMany
+    {
+        return $this->hasMany(WorkerDocument::class, 'company_id');
+    }
+
+    public function user(): HasOne
+    {
+        return $this->hasOne(User::class);
+    }
+
     public function workers(): HasMany
     {
         return $this->hasMany(Worker::class);

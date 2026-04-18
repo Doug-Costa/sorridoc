@@ -48,6 +48,12 @@ class Worker extends Model
         return $this->hasMany(WorkerDocument::class);
     }
 
+    public function user(): \Illuminate\Database\Eloquent\Relations\HasOne
+    {
+        return $this->hasOne(User::class);
+    }
+
+
     public function generateAccessToken(int $expiresDays = 365): string
     {
         $token = Str::random(64);

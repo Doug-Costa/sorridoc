@@ -133,7 +133,46 @@ class CompanyResource extends Resource
                     ->options(['Ativo' => 'Ativo', 'Inativo' => 'Inativo', 'Pendente' => 'Pendente']),
             ])
             ->actions([
+                Tables\Actions\Action::make('configureAccess')
+                    ->label('Configurar Acesso')
+                    ->icon('heroicon-o-lock-closed')
+                    ->color('info')
+                    ->modalHeading('Configurar Acesso ao Portal')
+                    ->form([
+                        Forms\Components\TextInput::make('email')
+                            ->email()
+                            ->required()
+                            ->default(fn (Company $record) => $record->user?->email ?? $record->email),
+                        Forms\Components\TextInput::make('password')
+                            ->label('Nova Senha')
+                            ->password()
+                            ->helperText('Deixe em branco para manter a senha atual (se o usuário já existir).')
+                            ->required(fn (Company $record) => !$record->user()->exists()),
+                    ])
+                    ->action(function (Company $record, array $data) {
+                        $user = $record->user;
+                        
+                        if ($user) {
+                            $user->email = $data['email'];
+                            if (filled($data['password'])) {
+                                $user->password = \Illuminate\Support\Facades\Hash::make($data['password']);
+                            }
+                            $user->save();
+                        } else {
+                            \App\Models\User::create([
+                                'name' => $record->fantasy_name ?? $record->corporate_name,
+                                'email' => $data['email'],
+                                'password' => \Illuminate\Support\Facades\Hash::make($data['password']),
+                                'role' => 'Empresa',
+                                'company_id' => $record->id,
+                            ]);
+                        }
 
+                        Notification::make()
+                            ->title('Acesso configurado com sucesso!')
+                            ->success()
+                            ->send();
+                    }),
                 Tables\Actions\ViewAction::make(),
                 Tables\Actions\EditAction::make(),
             ])
