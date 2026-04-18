@@ -10,7 +10,7 @@ class WorkerPolicy
 {
     public function viewAny(User $user, ?Company $company = null): bool
     {
-        if ($user->isSuperAdmin()) {
+        if ($user->hasPortalManagementAccess()) {
             return true;
         }
 
@@ -23,7 +23,7 @@ class WorkerPolicy
 
     public function view(User $user, Worker $worker): bool
     {
-        if ($user->isSuperAdmin()) {
+        if ($user->hasPortalManagementAccess()) {
             return true;
         }
 
@@ -36,7 +36,7 @@ class WorkerPolicy
 
     public function create(User $user, ?Company $company = null): bool
     {
-        if ($user->isSuperAdmin()) {
+        if ($user->hasPortalManagementAccess()) {
             return true;
         }
 
@@ -49,7 +49,7 @@ class WorkerPolicy
 
     public function update(User $user, Worker $worker): bool
     {
-        if ($user->isSuperAdmin()) {
+        if ($user->hasPortalManagementAccess()) {
             return true;
         }
 
@@ -59,6 +59,7 @@ class WorkerPolicy
 
         return false;
     }
+
 
     public function delete(User $user, Worker $worker): bool
     {

@@ -9,6 +9,9 @@ use Filament\Forms\Form;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Facades\Auth;
+
 
 class UserResource extends Resource
 {
@@ -60,10 +63,28 @@ class UserResource extends Resource
                         'Maringá' => 'Maringá',
                         'Sorriso' => 'Sorriso',
                     ]),
+                Forms\Components\Toggle::make('can_manage_portal')
+                    ->label('Administrador do Portal')
+                    ->helperText('Permite gerenciar empresas, funcionários e usuários do portal.')
+                    ->visible(fn () => Auth::user()->isSuperAdmin())
+                    ->columnSpanFull(),
             ]);
+
+    }
+
+    public static function getEloquentQuery(): Builder
+    {
+        $query = parent::getEloquentQuery();
+
+        if (!Auth::user()->isSuperAdmin()) {
+            $query->whereIn('role', ['Empresa', 'Funcionario']);
+        }
+
+        return $query;
     }
 
     public static function table(Table $table): Table
+
     {
         return $table
             ->columns([

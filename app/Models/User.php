@@ -32,7 +32,10 @@ class User extends Authenticatable
         '2fa_secret',
         'pin_code',
         'company_id',
+        'worker_id',
+        'can_manage_portal',
         'access_token',
+
         'token_expires_at',
         'last_access_at',
     ];
@@ -70,6 +73,12 @@ class User extends Authenticatable
     {
         return $this->role === 'Super Admin';
     }
+
+    public function hasPortalManagementAccess(): bool
+    {
+        return $this->isSuperAdmin() || $this->can_manage_portal;
+    }
+
 
     public function isGestorRH(): bool
     {

@@ -9,12 +9,12 @@ class CompanyPolicy
 {
     public function viewAny(User $user): bool
     {
-        return $user->isSuperAdmin();
+        return $user->hasPortalManagementAccess();
     }
 
     public function view(User $user, Company $company): bool
     {
-        if ($user->isSuperAdmin()) {
+        if ($user->hasPortalManagementAccess()) {
             return true;
         }
 
@@ -23,12 +23,12 @@ class CompanyPolicy
 
     public function create(User $user): bool
     {
-        return $user->isSuperAdmin();
+        return $user->hasPortalManagementAccess();
     }
 
     public function update(User $user, Company $company): bool
     {
-        return $user->isSuperAdmin();
+        return $user->hasPortalManagementAccess();
     }
 
     public function delete(User $user, Company $company): bool
@@ -38,7 +38,7 @@ class CompanyPolicy
 
     public function manageWorkers(User $user, Company $company): bool
     {
-        if ($user->isSuperAdmin()) {
+        if ($user->hasPortalManagementAccess()) {
             return true;
         }
 
@@ -49,4 +49,5 @@ class CompanyPolicy
     {
         return $user->isSuperAdmin();
     }
+
 }
