@@ -9,6 +9,9 @@ Route::get('/', function () {
     return redirect('/admin');
 });
 
+// Fallback login route for system compatibility
+Route::get('/login', fn() => redirect()->route('portal.login'))->name('login');
+
 // Portal SorriMed Routes
 Route::prefix('portal')->name('portal.')->group(function () {
     // Auth
@@ -28,9 +31,6 @@ Route::prefix('portal')->name('portal.')->group(function () {
         Route::get('/download/{document}', [PortalController::class, 'downloadDocument'])->name('download');
     });
 });
-
-// Fallback login route for system compatibility
-Route::get('/login', fn() => redirect()->route('portal.login'))->name('login');
 
 Route::middleware(['auth'])->group(function () {
     Route::get('/approvals/download/{approval}', [ApprovalController::class, 'downloadCertificate'])->name('approvals.download');

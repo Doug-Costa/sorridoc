@@ -40,22 +40,10 @@ class UserResource extends Resource
                     ->dehydrated(fn (?string $state) => filled($state)),
                 Forms\Components\Select::make('role')
                     ->label('Papel')
-                    ->options(User::ROLES)
+                    ->options(collect(User::ROLES)->except(['Empresa', 'Funcionario'])->toArray())
                     ->required()
                     ->live()
                     ->default('Operacional'),
-                Forms\Components\Select::make('company_id')
-                    ->label('Empresa Vinculada')
-                    ->relationship('company', 'fantasy_name')
-                    ->visible(fn (Forms\Get $get) => $get('role') === 'Empresa' || $get('role') === 'Gestor RH')
-                    ->searchable()
-                    ->preload(),
-                Forms\Components\Select::make('worker_id')
-                    ->label('Funcionário Vinculado')
-                    ->relationship('worker', 'name')
-                    ->visible(fn (Forms\Get $get) => $get('role') === 'Funcionario')
-                    ->searchable()
-                    ->preload(),
 
                 Forms\Components\Select::make('unit')
                     ->label('Unidade')
@@ -63,24 +51,13 @@ class UserResource extends Resource
                         'Maringá' => 'Maringá',
                         'Sorriso' => 'Sorriso',
                     ]),
-                Forms\Components\Toggle::make('can_manage_portal')
-                    ->label('Administrador do Portal')
-                    ->helperText('Permite gerenciar empresas, funcionários e usuários do portal.')
-                    ->visible(fn () => Auth::user()->isSuperAdmin())
-                    ->columnSpanFull(),
             ]);
 
     }
 
     public static function getEloquentQuery(): Builder
     {
-        $query = parent::getEloquentQuery();
-
-        if (!Auth::user()->isSuperAdmin()) {
-            $query->whereIn('role', ['Empresa', 'Funcionario']);
-        }
-
-        return $query;
+        return parent::getEloquentQuery()->internal();
     }
 
     public static function table(Table $table): Table
