@@ -45,16 +45,15 @@ function runCommand($command, $description) {
     }
 }
 
-// 1. Migrações (Incluindo a nova worker_id)
-runCommand('migrate --force', 'Executando migrações do banco de dados (Novas tabelas e campos do Portal)');
+// 1. Migrações (Incluindo permissões granulares)
+runCommand('migrate --force', 'Executando migrações do banco de dados');
 
 // 2. Limpeza de Caches
 runCommand('optimize:clear', 'Limpando e otimizando caches');
 
-// 3. Link simbólico de storage (essencial para download de documentos)
-runCommand('storage:link', 'Criando link simbólico para documentos (storage:link)');
+echo "<p class='success'>✓ Deploy realizado com sucesso!</p>";
+echo "<p><b>Nota:</b> O comando <i>storage:link</i> foi ignorado para evitar restrições da hospedagem. Se as imagens/downloads falharem, crie o link simbólico pelo painel da Hostinger.</p>";
 
-echo "<p class='success'>✓ Tudo pronto! O Portal agora está acessível em seu-dominio.com.br/portal</p>";
 echo "<hr><p style='color: #ef4444; font-weight: bold; text-align: center;'>⚠️ IMPORTANTE: EXCLUA ESTE ARQUIVO DO SERVIDOR AGORA! ⚠️</p>";
 echo "</div></body></html>";
 
