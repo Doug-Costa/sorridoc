@@ -54,10 +54,11 @@ class PortalController extends Controller
             abort(403);
         }
 
-        if (!\Storage::disk('public')->exists($document->file_path)) {
+        if (!\Storage::disk('private')->exists($document->file_path)) {
             abort(404, 'Arquivo não encontrado no servidor.');
         }
 
-        return \Storage::disk('public')->download($document->file_path, $document->original_name);
+        return \Storage::disk('private')->download($document->file_path, $document->original_name);
+
     }
 }
