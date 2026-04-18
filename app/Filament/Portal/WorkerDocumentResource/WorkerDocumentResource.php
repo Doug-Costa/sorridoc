@@ -59,7 +59,22 @@ class WorkerDocumentResource extends Resource
                             ->visibility('private')
                             ->preserveFilenames()
                             ->downloadable()
-                            ->previewable(false),
+                            ->previewable(false)
+                            ->afterStateUpdated(function (Forms\Set $set, $state) {
+                                if (!$state) return;
+                                
+                                $file = is_array($state) ? array_values($state)[0] : $state;
+                                
+                                if ($file instanceof \Livewire\Features\SupportFileUploads\TemporaryUploadedFile) {
+                                    $set('original_name', $file->getClientOriginalName());
+                                    $set('file_size', $file->getSize());
+                                    $set('mime_type', $file->getMimeType());
+                                }
+                            }),
+                        Forms\Components\Hidden::make('original_name'),
+                        Forms\Components\Hidden::make('file_size'),
+                        Forms\Components\Hidden::make('mime_type'),
+
                         Forms\Components\Placeholder::make('file_info')
                             ->label('Informações do Arquivo')
                             ->content(function ($record) {
