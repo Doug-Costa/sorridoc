@@ -41,6 +41,11 @@ class ApprovalResource extends Resource
                             ->viewData(fn (Approval $record) => ['record' => $record])
                             ->columnSpanFull(),
                         
+                        Infolists\Components\ViewEntry::make('multiple_progress')
+                            ->view('filament.components.multiple-approval-progress')
+                            ->viewData(fn (Approval $record) => ['record' => $record])
+                            ->columnSpanFull(),
+                        
                         Infolists\Components\Grid::make(1)
                             ->schema([
                                 Infolists\Components\TextEntry::make('protection_notice')
@@ -102,9 +107,11 @@ class ApprovalResource extends Resource
                     ->options([
                         'Simples' => 'Aprovação Única',
                         'Dupla' => 'Dupla Aprovação — Diretor + Advogada',
+                        'Múltipla' => 'Múltipla Aprovação — Vários aprovadores',
                     ])
                     ->required()
-                    ->default('Simples'),
+                    ->default('Simples')
+                    ->reactive(),
                 Forms\Components\Select::make('sensitivity_level')
                     ->options(['Normal' => 'Normal', 'Sigiloso' => 'Sigiloso', 'LGPD' => 'LGPD'])
                     ->required()->default('Normal'),
@@ -121,9 +128,23 @@ class ApprovalResource extends Resource
                 Forms\Components\Select::make('assigned_to')
                     ->label('Atribuído a')
                     ->relationship('assignedTo', 'name')
-                    ->required()
+                    ->required(fn ($get) => $get('flow_type') !== 'Múltipla')
                     ->searchable()
-                    ->preload(),
+                    ->preload()
+                    ->visible(fn ($get) => $get('flow_type') !== 'Múltipla'),
+                
+                Forms\Components\CheckboxList::make('multiple_assignees')
+                    ->label('Aprovadores Múltiplos')
+                    ->relationship('assignees.user', 'name')
+                    ->required(fn ($get) => $get('flow_type') === 'Múltipla')
+                    ->searchable()
+                    ->preload()
+                    ->visible(fn ($get) => $get('flow_type') === 'Múltipla')
+                    ->afterStateUpdated(function ($state, $set, $get) {
+                        if ($get('flow_type') === 'Múltipla' && is_array($state)) {
+                            $set('assigned_to', null);
+                        }
+                    }),
             ]);
     }
 
@@ -137,7 +158,10 @@ class ApprovalResource extends Resource
 
         return $query->where(function ($q) {
             $q->where('assigned_to', Auth::id())
-                ->orWhere('owner_id', Auth::id());
+                ->orWhere('owner_id', Auth::id())
+                ->orWhereHas('assignees', function ($subQuery) {
+                    $subQuery->where('user_id', Auth::id());
+                });
         });
     }
 
@@ -236,6 +260,14 @@ class ApprovalResource extends Resource
                     })
                     ->visible(fn (Approval $record) => $record->status !== 'Aprovado' && $record->status !== 'Rejeitado'),
                 
+                Tables\Actions\Action::make('view_document')
+                    ->label('Visualizar Documento')
+                    ->icon('heroicon-o-eye')
+                    ->color('info')
+                    ->url(fn (Approval $record) => route('approvals.view-document', $record))
+                    ->openUrlInNewTab()
+                    ->visible(fn (Approval $record) => $record->file_path !== null),
+
                 Tables\Actions\Action::make('download_certificate')
                     ->label('Certificado PDF')
                     ->icon('heroicon-o-document-arrow-down')

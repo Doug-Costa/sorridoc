@@ -4,6 +4,7 @@ namespace App\Domain\Services;
 
 use App\Models\Approval;
 use App\Models\ApprovalFlow;
+use App\Models\ApprovalAssignee;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\RateLimiter;
@@ -17,6 +18,48 @@ class ApprovalService
     {
         $user = Auth::user();
 
+        if ($record->flow_type === 'Múltipla') {
+            $this->approveMultiple($record, $user, $pin, $comment);
+        } else {
+            $this->approveTraditional($record, $user, $pin, $comment);
+        }
+    }
+
+    private function approveMultiple(Approval $record, $user, string $pin, ?string $comment): void
+    {
+        // Verificar se usuário está na lista de aprovadores
+        $assignee = $record->assignees()->where('user_id', $user->id)->first();
+        if (!$assignee) {
+            throw new \RuntimeException('Você não está na lista de aprovadores para este documento.');
+        }
+
+        // Verificar se já aprovou
+        if ($assignee->status === 'Aprovado') {
+            throw new \RuntimeException('Você já aprovou este documento.');
+        }
+
+        // Verificar se já rejeitou
+        if ($assignee->status === 'Rejeitado') {
+            throw new \RuntimeException('Você já rejeitou este documento.');
+        }
+
+        // Validar PIN
+        $this->validatePin($user, $pin);
+
+        // Atualizar status do aprovador
+        $assignee->update([
+            'status' => 'Aprovado',
+            'approved_at' => now(),
+            'comment' => $comment,
+            'signature_hash' => $this->generateSignatureHash($record, $pin),
+        ]);
+
+        // Verificar se todos aprovaram
+        $this->updateMultipleApprovalStatus($record);
+    }
+
+    private function approveTraditional(Approval $record, $user, string $pin, ?string $comment): void
+    {
         // 1. Assignment & Flow Controls
         $approvalCount = $record->approvalFlows()->where('status', 'Aprovado')->count();
 
@@ -65,6 +108,19 @@ class ApprovalService
         $record->update(['status' => $targetStatus]);
     }
 
+    private function updateMultipleApprovalStatus(Approval $record): void
+    {
+        $progress = $record->getApprovalProgress();
+        
+        if ($progress['rejected'] > 0) {
+            $record->update(['status' => 'Rejeitado']);
+        } elseif ($progress['approved'] === $progress['total'] && $progress['total'] > 0) {
+            $record->update(['status' => 'Aprovado']);
+        } elseif ($progress['approved'] > 0) {
+            $record->update(['status' => 'Em Aprovação']);
+        }
+    }
+
     /**
      * @throws \InvalidArgumentException
      */
@@ -72,6 +128,43 @@ class ApprovalService
     {
         $user = Auth::user();
 
+        if ($record->flow_type === 'Múltipla') {
+            $this->rejectMultiple($record, $user, $pin, $comment);
+        } else {
+            $this->rejectTraditional($record, $user, $pin, $comment);
+        }
+    }
+
+    private function rejectMultiple(Approval $record, $user, string $pin, string $comment): void
+    {
+        // Verificar se usuário está na lista de aprovadores
+        $assignee = $record->assignees()->where('user_id', $user->id)->first();
+        if (!$assignee) {
+            throw new \RuntimeException('Você não está na lista de aprovadores para este documento.');
+        }
+
+        // Verificar se já rejeitou
+        if ($assignee->status === 'Rejeitado') {
+            throw new \RuntimeException('Você já rejeitou este documento.');
+        }
+
+        // Validar PIN
+        $this->validatePin($user, $pin);
+
+        // Atualizar status do aprovador
+        $assignee->update([
+            'status' => 'Rejeitado',
+            'approved_at' => now(),
+            'comment' => $comment,
+            'signature_hash' => $this->generateSignatureHash($record, $pin, true),
+        ]);
+
+        // Rejeição de um aprovador rejeita todo o documento
+        $record->update(['status' => 'Rejeitado']);
+    }
+
+    private function rejectTraditional(Approval $record, $user, string $pin, string $comment): void
+    {
         // 1. PIN Validation
         $this->validatePin($user, $pin);
 

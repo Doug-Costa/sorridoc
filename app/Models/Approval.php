@@ -38,6 +38,21 @@ class Approval extends Model
             }
             $approval->version_number = 1;
         });
+
+        static::created(function ($approval) {
+            if ($approval->flow_type === 'Múltipla' && request()->has('multiple_assignees')) {
+                $assignees = request()->input('multiple_assignees', []);
+                if (is_array($assignees)) {
+                    foreach ($assignees as $userId) {
+                        ApprovalAssignee::create([
+                            'approval_id' => $approval->id,
+                            'user_id' => $userId,
+                            'status' => 'Pendente',
+                        ]);
+                    }
+                }
+            }
+        });
     }
 
     public function owner()
@@ -53,5 +68,49 @@ class Approval extends Model
     public function approvalFlows()
     {
         return $this->hasMany(ApprovalFlow::class, 'approval_id');
+    }
+
+    public function assignees()
+    {
+        return $this->hasMany(ApprovalAssignee::class, 'approval_id');
+    }
+
+    public function approvedAssignees()
+    {
+        return $this->assignees()->where('status', 'Aprovado');
+    }
+
+    public function rejectedAssignees()
+    {
+        return $this->assignees()->where('status', 'Rejeitado');
+    }
+
+    public function pendingAssignees()
+    {
+        return $this->assignees()->where('status', 'Pendente');
+    }
+
+    public function isMultipleApproval(): bool
+    {
+        return $this->flow_type === 'Múltipla';
+    }
+
+    public function getApprovalProgress(): array
+    {
+        if (!$this->isMultipleApproval()) {
+            return ['current' => 0, 'total' => 0, 'percentage' => 0];
+        }
+
+        $total = $this->assignees()->count();
+        $approved = $this->approvedAssignees()->count();
+        $rejected = $this->rejectedAssignees()->count();
+        
+        return [
+            'total' => $total,
+            'approved' => $approved,
+            'rejected' => $rejected,
+            'pending' => $total - $approved - $rejected,
+            'percentage' => $total > 0 ? round(($approved / $total) * 100, 0) : 0
+        ];
     }
 }
