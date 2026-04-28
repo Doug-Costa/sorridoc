@@ -22,6 +22,18 @@ Route::get('/deploy-setup', function () {
     try {
         $output = '';
         
+        // Forçar criação da tabela se o FTP da migration falhou
+        if (!\Illuminate\Support\Facades\Schema::hasTable('approval_assignees')) {
+            \Illuminate\Support\Facades\Schema::create('approval_assignees', function (\Illuminate\Database\Schema\Blueprint $table) {
+                $table->id();
+                $table->foreignId('approval_id')->constrained('approvals')->onDelete('cascade');
+                $table->foreignId('user_id')->constrained('users')->onDelete('cascade');
+                $table->string('status')->default('Pendente');
+                $table->timestamps();
+            });
+            $output .= "⚠️ Tabela 'approval_assignees' CRIADA À FORÇA com sucesso!\n\n";
+        }
+        
         Artisan::call('optimize:clear');
         $output .= "Limpeza de Cache:\n" . Artisan::output() . "\n\n";
         

@@ -138,7 +138,6 @@ class ApprovalResource extends Resource
                     ->relationship('assignees.user', 'name')
                     ->required(fn ($get) => $get('flow_type') === 'Múltipla')
                     ->searchable()
-                    ->preload()
                     ->visible(fn ($get) => $get('flow_type') === 'Múltipla')
                     ->afterStateUpdated(function ($state, $set, $get) {
                         if ($get('flow_type') === 'Múltipla' && is_array($state)) {
