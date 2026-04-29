@@ -20,7 +20,7 @@ class ApprovalResource extends Resource
     protected static ?string $navigationIcon = 'heroicon-o-check-badge';
     protected static ?string $modelLabel = 'Aprovação';
     protected static ?string $pluralModelLabel = 'Aprovações';
-    protected static ?string $navigationLabel = 'Gerir Aprovações';
+    protected static ?string $navigationLabel = 'Aprovações';
     protected static ?string $navigationGroup = 'PRINCIPAL';
     protected static ?int $navigationSort = 2;
 
