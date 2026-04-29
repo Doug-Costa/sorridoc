@@ -148,7 +148,17 @@ class ApprovalResource extends Resource
                     ->required(fn ($get) => $get('flow_type') === 'Dupla')
                     ->searchable()
                     ->preload()
-                    ->visible(fn ($get) => $get('flow_type') === 'Dupla'),
+                    ->visible(fn ($get) => $get('flow_type') === 'Dupla')
+                    ->afterStateHydrated(function ($component, $record) {
+                        if ($record && $record->flow_type === 'Dupla') {
+                            $advogado = $record->assignees()
+                                ->whereHas('user', fn($q) => $q->where('role', 'Advogado'))
+                                ->first();
+                            if ($advogado) {
+                                $component->state($advogado->user_id);
+                            }
+                        }
+                    }),
                 
                 Forms\Components\Repeater::make('assignees')
                     ->relationship('assignees')
