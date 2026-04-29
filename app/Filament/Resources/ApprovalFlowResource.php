@@ -21,7 +21,7 @@ class ApprovalFlowResource extends Resource
     protected static ?string $pluralModelLabel = 'Fila de Aprovações';
     protected static ?string $navigationLabel = 'Aprovações';
     protected static ?string $navigationGroup = 'PRINCIPAL';
-    protected static bool $shouldRegisterNavigation = false;
+    protected static ?int $navigationSort = 3;
 
     /* public static function getNavigationBadge(): ?string
     {
