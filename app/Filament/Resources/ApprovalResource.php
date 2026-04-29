@@ -137,12 +137,20 @@ class ApprovalResource extends Resource
                     ->preload()
                     ->visible(fn ($get) => $get('flow_type') !== 'Múltipla'),
                 
-                Forms\Components\CheckboxList::make('multiple_assignees')
+                Forms\Components\Repeater::make('assignees')
+                    ->relationship('assignees')
                     ->label('Aprovadores Múltiplos')
-                    ->relationship('assignees.user', 'name')
+                    ->schema([
+                        Forms\Components\Select::make('user_id')
+                            ->label('Aprovador')
+                            ->relationship('user', 'name')
+                            ->required()
+                            ->searchable()
+                            ->preload()
+                    ])
                     ->required(fn ($get) => $get('flow_type') === 'Múltipla')
-                    ->searchable()
                     ->visible(fn ($get) => $get('flow_type') === 'Múltipla')
+                    ->createItemButtonLabel('Adicionar Aprovador')
                     ->afterStateUpdated(function ($state, $set, $get) {
                         if ($get('flow_type') === 'Múltipla' && is_array($state)) {
                             $set('assigned_to', null);
