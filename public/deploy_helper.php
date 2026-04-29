@@ -82,6 +82,18 @@ try {
         echo "<pre>" . \Illuminate\Support\Facades\Artisan::output() . "</pre>";
         echo "<p style='color:green'>Storage Link criado!</p>";
     }
+
+    if ($command === 'optimize') {
+        \Illuminate\Support\Facades\Artisan::call('optimize');
+        echo "<pre>" . \Illuminate\Support\Facades\Artisan::output() . "</pre>";
+        echo "<p style='color:green'>Sistema Otimizado (Cache gerado)!</p>";
+    }
+
+    if ($command === 'clear') {
+        \Illuminate\Support\Facades\Artisan::call('optimize:clear');
+        echo "<pre>" . \Illuminate\Support\Facades\Artisan::output() . "</pre>";
+        echo "<p style='color:green'>Todos os Caches foram limpos!</p>";
+    }
 } catch (\Exception $e) {
     echo "<p style='color:red'>Erro operacional: " . $e->getMessage() . "</p>";
 }

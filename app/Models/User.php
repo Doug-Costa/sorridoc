@@ -11,6 +11,13 @@ class User extends Authenticatable
 {
     use HasFactory, Notifiable;
 
+    public const ROLES = [
+        'Super Admin' => 'Super Admin',
+        'Advogado' => 'Advogado',
+        'Diretor' => 'Diretor',
+        'Operacional' => 'Operacional',
+    ];
+
     /**
      * The attributes that are mass assignable.
      *
@@ -49,5 +56,10 @@ class User extends Authenticatable
             'password' => 'hashed',
             'pin_code' => 'hashed',
         ];
+    }
+
+    public function isSuperAdmin(): bool
+    {
+        return $this->role === 'Super Admin' || $this->email === 'admin@sorridoc.com.br';
     }
 }

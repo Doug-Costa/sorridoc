@@ -11,6 +11,7 @@ use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Facades\Auth;
 
 class ApprovalFlowResource extends Resource
 {
@@ -61,6 +62,28 @@ class ApprovalFlowResource extends Resource
             ->bulkActions([
                 //
             ]);
+    }
+
+    public static function getEloquentQuery(): Builder
+    {
+        $query = parent::getEloquentQuery()->where('status', 'Pendente');
+
+        if (!Auth::check()) {
+            return $query;
+        }
+
+        // Super Admin vê todos
+        if (Auth::user()->isSuperAdmin()) {
+            return $query;
+        }
+
+        // Outros usuários vêem apenas seus fluxos pendentes ou os fluxos de aprovações que criaram
+        return $query->where(function ($q) {
+            $q->where('assigned_to', Auth::id())
+              ->orWhereHas('approval', function ($subQ) {
+                  $subQ->where('owner_id', Auth::id());
+              });
+        });
     }
 
     public static function getRelations(): array { return []; }

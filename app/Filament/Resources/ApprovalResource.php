@@ -100,6 +100,7 @@ class ApprovalResource extends Resource
                     ->maxSize(102400)
                     ->acceptedFileTypes(['application/pdf']),
                 Forms\Components\Select::make('category')
+                    ->label('Categoria')
                     ->options(['Contrato' => 'Contrato', 'Ordem' => 'Ordem', 'Compliance' => 'Compliance', 'Acordo' => 'Acordo/Ação'])
                     ->required(),
                 Forms\Components\Select::make('flow_type')
@@ -113,15 +114,18 @@ class ApprovalResource extends Resource
                     ->default('Simples')
                     ->reactive(),
                 Forms\Components\Select::make('sensitivity_level')
+                    ->label('Nível de Sigilo')
                     ->options(['Normal' => 'Normal', 'Sigiloso' => 'Sigiloso', 'LGPD' => 'LGPD'])
                     ->required()->default('Normal'),
                 Forms\Components\Select::make('status')
+                    ->label('Status')
                     ->options(['Pendente' => 'Pendente', 'Em Aprovação' => 'Em Aprovação', 'Aprovado' => 'Aprovado', 'Rejeitado' => 'Rejeitado'])
                     ->required()->default('Pendente'),
                 Forms\Components\DatePicker::make('deadline_at')
                     ->label('Prazo limite')
                     ->required(),
                 Forms\Components\Select::make('owner_id')
+                    ->label('Solicitante')
                     ->relationship('owner', 'name')
                     ->default(fn () => Auth::id())
                     ->required(),
