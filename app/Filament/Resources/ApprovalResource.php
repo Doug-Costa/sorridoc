@@ -143,7 +143,7 @@ class ApprovalResource extends Resource
                     ->schema([
                         Forms\Components\Select::make('user_id')
                             ->label('Aprovador')
-                            ->relationship('user', 'name')
+                            ->options(\App\Models\User::all()->pluck('name', 'id'))
                             ->required()
                             ->searchable()
                             ->preload()
