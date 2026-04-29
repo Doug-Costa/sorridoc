@@ -19,7 +19,7 @@ class ApprovalFlowResource extends Resource
     protected static ?string $navigationIcon = 'heroicon-o-check-circle';
     protected static ?string $modelLabel = 'Fluxo de Aprovação';
     protected static ?string $pluralModelLabel = 'Fila de Aprovações';
-    protected static ?string $navigationLabel = 'Aprovações Pendentes';
+    protected static ?string $navigationLabel = 'Aprovações';
     protected static ?string $navigationGroup = 'PRINCIPAL';
     protected static ?int $navigationSort = 3;
 
