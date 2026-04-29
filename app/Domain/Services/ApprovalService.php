@@ -71,6 +71,11 @@ class ApprovalService
         } else {
             // 2nd Signature (Double Flow): Must be Advogado or Super Admin
             if ($record->flow_type === 'Dupla') {
+                $isAssigned = $record->assignees()->where('user_id', $user->id)->exists();
+                if (!$isAssigned && $user->role !== 'Super Admin') {
+                    throw new \RuntimeException('Você não está na lista de aprovadores designados para este documento.');
+                }
+
                 if ($user->role !== 'Advogado' && $user->role !== 'Super Admin') {
                     throw new \RuntimeException('A assinatura final de um fluxo duplo deve ser realizada por um(a) Advogado(a).');
                 }

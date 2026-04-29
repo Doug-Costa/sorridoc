@@ -130,12 +130,25 @@ class ApprovalResource extends Resource
                     ->default(fn () => Auth::id())
                     ->required(),
                 Forms\Components\Select::make('assigned_to')
-                    ->label('Atribuído a')
-                    ->relationship('assignedTo', 'name')
+                    ->label(fn ($get) => $get('flow_type') === 'Dupla' ? 'Diretor(a)' : 'Atribuído a')
+                    ->options(function ($get) {
+                        if ($get('flow_type') === 'Dupla') {
+                            return \App\Models\User::where('role', 'Diretor')->pluck('name', 'id');
+                        }
+                        return \App\Models\User::all()->pluck('name', 'id');
+                    })
                     ->required(fn ($get) => $get('flow_type') !== 'Múltipla')
                     ->searchable()
                     ->preload()
                     ->visible(fn ($get) => $get('flow_type') !== 'Múltipla'),
+
+                Forms\Components\Select::make('advogado_id')
+                    ->label('Advogado(a)')
+                    ->options(\App\Models\User::where('role', 'Advogado')->pluck('name', 'id'))
+                    ->required(fn ($get) => $get('flow_type') === 'Dupla')
+                    ->searchable()
+                    ->preload()
+                    ->visible(fn ($get) => $get('flow_type') === 'Dupla'),
                 
                 Forms\Components\Repeater::make('assignees')
                     ->relationship('assignees')

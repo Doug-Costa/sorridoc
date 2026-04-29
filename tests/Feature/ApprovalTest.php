@@ -80,9 +80,21 @@ class ApprovalTest extends TestCase
             'category' => 'Compliance',
             'status' => 'Pendente',
             'owner_id' => $solicitante->id,
-            'assigned_to' => $diretor->id, // 1st Step assigned to Diretor
+            'assigned_to' => $diretor->id,
             'deadline_at' => now()->addDays(7),
             'flow_type' => 'Dupla'
+        ]);
+
+        \App\Models\ApprovalAssignee::create([
+            'approval_id' => $approval->id,
+            'user_id' => $diretor->id,
+            'status' => 'Pendente',
+        ]);
+
+        \App\Models\ApprovalAssignee::create([
+            'approval_id' => $approval->id,
+            'user_id' => $advogada->id,
+            'status' => 'Pendente',
         ]);
 
         // 1. Solicitante não pode assinar o primeiro passo se não for o assigned_to

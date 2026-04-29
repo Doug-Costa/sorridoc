@@ -52,6 +52,23 @@ class Approval extends Model
                     }
                 }
             }
+
+            if ($approval->flow_type === 'Dupla') {
+                if ($approval->assigned_to) {
+                    ApprovalAssignee::create([
+                        'approval_id' => $approval->id,
+                        'user_id' => $approval->assigned_to,
+                        'status' => 'Pendente',
+                    ]);
+                }
+                if (request()->has('advogado_id') && request()->input('advogado_id')) {
+                    ApprovalAssignee::create([
+                        'approval_id' => $approval->id,
+                        'user_id' => request()->input('advogado_id'),
+                        'status' => 'Pendente',
+                    ]);
+                }
+            }
         });
     }
 
