@@ -52,60 +52,6 @@ class Approval extends Model
                     }
                 }
             }
-
-            if ($approval->flow_type === 'Dupla') {
-                if ($approval->assigned_to) {
-                    ApprovalAssignee::create([
-                        'approval_id' => $approval->id,
-                        'user_id' => $approval->assigned_to,
-                        'status' => 'Pendente',
-                    ]);
-                }
-                if (request()->has('advogado_id') && request()->input('advogado_id')) {
-                    ApprovalAssignee::create([
-                        'approval_id' => $approval->id,
-                        'user_id' => request()->input('advogado_id'),
-                        'status' => 'Pendente',
-                    ]);
-                }
-            }
-        });
-
-        static::updated(function ($approval) {
-            if ($approval->flow_type === 'Dupla') {
-                if ($approval->assigned_to) {
-                    $diretor = $approval->assignees()
-                        ->whereHas('user', fn($q) => $q->where('role', 'Diretor'))
-                        ->first();
-                    
-                    if ($diretor) {
-                        $diretor->update(['user_id' => $approval->assigned_to]);
-                    } else {
-                        ApprovalAssignee::create([
-                            'approval_id' => $approval->id,
-                            'user_id' => $approval->assigned_to,
-                            'status' => 'Pendente',
-                        ]);
-                    }
-                }
-
-                if (request()->has('advogado_id') && request()->input('advogado_id')) {
-                    $advogadoId = request()->input('advogado_id');
-                    $advogado = $approval->assignees()
-                        ->whereHas('user', fn($q) => $q->where('role', 'Advogado'))
-                        ->first();
-                    
-                    if ($advogado) {
-                        $advogado->update(['user_id' => $advogadoId]);
-                    } else {
-                        ApprovalAssignee::create([
-                            'approval_id' => $approval->id,
-                            'user_id' => $advogadoId,
-                            'status' => 'Pendente',
-                        ]);
-                    }
-                }
-            }
         });
     }
 
