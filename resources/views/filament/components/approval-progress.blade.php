@@ -1,4 +1,5 @@
 @php
+    $isMultipla = $record->flow_type === 'Múltipla';
     $flows = $record->approvalFlows()->where('status', 'Aprovado')->get();
     $isDupla = $record->flow_type === 'Dupla';
     $step1 = $flows->first();
@@ -6,6 +7,7 @@
     $isRejeitado = $record->status === 'Rejeitado';
 @endphp
 
+@if(!$isMultipla)
 <div class="flex items-center justify-between py-4">
     <div class="flex items-center w-full max-w-2xl mx-auto space-x-4">
         <!-- Step 1 -->
@@ -61,4 +63,5 @@
         </div>
     </div>
 </div>
+@endif
 
