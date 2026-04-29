@@ -66,7 +66,7 @@ class ApprovalFlowResource extends Resource
 
     public static function getEloquentQuery(): Builder
     {
-        $query = parent::getEloquentQuery()->where('status', 'Pendente');
+        $query = parent::getEloquentQuery()->where('status', 'Aprovado');
 
         if (!Auth::check()) {
             return $query;
