@@ -10,6 +10,7 @@ class Notificacoes extends Page
     protected static ?string $navigationGroup = 'CONFIGURAÇÕES';
     protected static ?int $navigationSort = 3;
     protected static ?string $navigationLabel = 'Notificações';
+    protected static bool $shouldRegisterNavigation = false;
     protected static string $view = 'filament.pages.notificacoes';
 
     public static function getNavigationBadge(): ?string
