@@ -42,7 +42,7 @@
                     @endif
                 </div>
                 <span class="mt-2 text-xs font-semibold {{ $step2 ? 'text-primary-700' : 'text-gray-500' }}">
-                    {{ $step2 ? $step2->assignedUser->name : 'Advogada' }}
+                    {{ $step2 ? $step2->assignedUser->name : 'Advogado(a)' }}
                 </span>
                 @if($step2)
                     <span class="text-[10px] text-gray-400 font-medium">{{ $step2->approved_at?->format('d/m H:i') }}</span>

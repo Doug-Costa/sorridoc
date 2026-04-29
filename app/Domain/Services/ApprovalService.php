@@ -72,7 +72,7 @@ class ApprovalService
             // 2nd Signature (Double Flow): Must be Advogado or Super Admin
             if ($record->flow_type === 'Dupla') {
                 if ($user->role !== 'Advogado' && $user->role !== 'Super Admin') {
-                    throw new \RuntimeException('A assinatura final de um fluxo duplo deve ser realizada por uma Advogada.');
+                    throw new \RuntimeException('A assinatura final de um fluxo duplo deve ser realizada por um(a) Advogado(a).');
                 }
 
                 if ($record->approvalFlows()->where('assigned_to', $user->id)->exists()) {

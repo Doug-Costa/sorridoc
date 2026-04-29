@@ -107,7 +107,7 @@ class ApprovalResource extends Resource
                     ->label('Fluxo de aprovação')
                     ->options([
                         'Simples' => 'Aprovação Única',
-                        'Dupla' => 'Dupla Aprovação — Diretor + Advogada',
+                        'Dupla' => 'Dupla Aprovação — Diretor + Advogado(a)',
                         'Múltipla' => 'Múltipla Aprovação — Vários aprovadores',
                     ])
                     ->required()
